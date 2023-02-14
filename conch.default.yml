@@ -1,0 +1,55 @@
+# A standard configuration file for conch, the Conventional Commits checker.
+
+# The major version number of the Conventional Commits specification to enforce.
+# https://www.conventionalcommits.org/en/v1.0.0/
+# Right now only version 1 is supported. This field may be used in the future
+# if there are changes to the specification.
+version: 1
+
+policy:
+  type:
+    # The list of commit types to allow. Leave empty to accept anything.
+    types: []
+
+    # The list of commit types that are treated at least as a minor change.
+    # (Use a "!" or "BREAKING CHANGE" footer to designate a major change.)
+    minor:
+      - feat
+
+    # The list of commit types that are treated at least as a patch.
+    # (Use a "!" or "BREAKING CHANGE" footer to designate a major change.)
+    patch:
+      - fix
+
+  scope:
+    # If true, all commits must have a scope.
+    required: false
+
+    # The list of scopes to allow. Leave empty to accept anything.
+    scopes: []
+
+  description:
+    # The minimum length of the commit description.
+    # (Since commits must have a description to be syntactially valid,
+    # settings less than 1 have no effect.)
+    minLength: 1
+
+    # The maximum length of the commit description.
+    # (Disable this check by setting a value of 0.)
+    maxLength: 0
+
+  footer:
+    # Require a footer that includes the following tokens.
+    # You can use this to enforce tokens like "Refs" for issue tracker references.
+    requiredTokens: []
+
+    # Additional tokens that may be used. Leave empty to accept anything.
+    # Tokens are case insensitive, except for "BREAKING CHANGE" and "BREAKING-CHANGE",
+    # which must be uppercase.
+    tokens: []
+
+exclude:
+  # Commit messages that begin with these phrases will be ignored.
+  # Useful for excluding auto-generated commits from Github and other third-party tools.
+  prefixes:
+    - "initial commit"
