@@ -14,9 +14,9 @@ services:
   test:
     extends:
       service: dev
-    command: ["go", "test", "-v", "./..."]
+    command: ["go", "test", "-v", "-tags=static,system_libgit2", "./..."]
 
   cover:
     extends:
       service: dev
-    command: ["/bin/sh", "-c", "go test -coverprofile=c.out './...' && go tool cover -func=c.out"]
+    command: ["/bin/sh", "-c", "go test -tags=static,system_libgit2 -coverprofile=c.out './...' && go tool cover -func=c.out"]

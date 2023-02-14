@@ -1,4 +1,4 @@
-FROM golang:1.19-alpine
+FROM golang:1.19-alpine3.17
 
 # update this if different user and directory names are needed
 ARG SERVICE=go
@@ -7,7 +7,9 @@ ARG SERVICE=go
 ARG UID=1000
 ARG GID=1000
 
-RUN apk add --no-cache gcc musl-dev tini
+ARG LIBGIT2_VERSION=1.5.1
+
+RUN apk add --no-cache gcc "libgit2-dev~=${LIBGIT2_VERSION}" musl-dev pkgconf tini
 
 RUN apk add --no-cache --virtual .temp shadow \
     && groupadd --gid "$GID" "$SERVICE" \
