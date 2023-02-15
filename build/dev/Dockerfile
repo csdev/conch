@@ -1,3 +1,4 @@
+# Dev image, supporting dynamic linking with libgit2.so for faster rebuilds.
 FROM golang:1.19-alpine3.17
 
 # update this if different user and directory names are needed
