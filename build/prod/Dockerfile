@@ -54,4 +54,5 @@ WORKDIR /opt/$SERVICE/bin
 COPY --from=builder /opt/$SERVICE/bin .
 
 USER $SERVICE
+ENV CONCH_DOCKER_WORKSPACE=/mnt/workspace/
 ENTRYPOINT ["/sbin/tini", "--", "/opt/go/bin/conch"]

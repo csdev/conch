@@ -32,6 +32,33 @@ func (s *CaseInsensitiveSet) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// String implements pflag.Value.String, which prints the contents of the
+// collection for use with command-line flags.
+func (s *CaseInsensitiveSet) String() string {
+	if s == nil {
+		return ""
+	}
+	b := strings.Builder{}
+	for _, item := range *s {
+		b.WriteString(item)
+		b.WriteString(",")
+	}
+	return b.String()
+}
+
+// Set implements pflag.Value.Set, which sets the new value of the collection
+// from command-line flags.
+func (s *CaseInsensitiveSet) Set(val string) error {
+	*s = NewCaseInsensitiveSet(strings.Split(val, ","))
+	return nil
+}
+
+// Type implements pflag.Value.Type, which returns a description of the
+// flag type for display in command-line help.
+func (s *CaseInsensitiveSet) Type() string {
+	return "comma_separated_strings"
+}
+
 func (s CaseInsensitiveSet) Add(item string) {
 	key := strings.ToLower(item)
 	s[key] = item

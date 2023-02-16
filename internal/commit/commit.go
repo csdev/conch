@@ -59,25 +59,26 @@ func (c *Commit) setMessage(msg string) error {
 	return nil
 }
 
-func ParseRange(r string) ([]*Commit, error) {
-	repo, err := git.OpenRepository(".")
+func ParseRange(repoPath string, rangeSpec string) ([]*Commit, error) {
+	commits := make([]*Commit, 0, 10)
+
+	repo, err := git.OpenRepository(repoPath)
 	if err != nil {
-		return nil, err
+		return commits, err
 	}
 	defer repo.Free()
 
 	revwalk, err := repo.Walk()
 	if err != nil {
-		return nil, err
+		return commits, err
 	}
 
-	gitErr := revwalk.PushRange(r)
+	gitErr := revwalk.PushRange(rangeSpec)
 	if gitErr != nil {
-		return nil, gitErr
+		return commits, gitErr
 	}
 	defer revwalk.Free()
 
-	commits := make([]*Commit, 0, 10)
 	parseErr := NewParseError()
 
 	gitErr = revwalk.Iterate(func(gitCommit *git.Commit) bool {
@@ -93,10 +94,10 @@ func ParseRange(r string) ([]*Commit, error) {
 		return true // continues iteration
 	})
 	if gitErr != nil {
-		return nil, gitErr
+		return commits, gitErr
 	}
 	if parseErr.HasErrors() {
-		return nil, parseErr
+		return commits, parseErr
 	}
 
 	return commits, nil
