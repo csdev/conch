@@ -169,6 +169,8 @@ which accepts the following variables:
 .Type         # The commit type
 .Scope        # The commit scope (may be empty)
 .Description  # The commit description (may be empty)
+.Body         # The remainder of the commit message, excluding any footers (may be empty)
+.Footers      # The footers, as a list of {Token, Value} pairs (may be empty)
 ```
 
 Additionally, you may use `\t` and `\n` to insert tabs and newlines.
