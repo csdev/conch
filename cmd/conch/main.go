@@ -157,7 +157,10 @@ func main() {
 			}
 
 			if tpl != nil {
-				tpl.Execute(os.Stdout, c)
+				err := tpl.Execute(os.Stdout, c)
+				if err != nil {
+					log.Printf("%v", err)
+				}
 			} else if !outputCount {
 				fmt.Printf("%s: %s\n", c.Id[:7], c.Summary())
 			}
