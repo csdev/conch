@@ -96,13 +96,13 @@ Usage: conch [options] <revision_range>
 For example:
 
 ```bash
-# The ten most recent commits on the current branch
+# Validate the ten most recent commits on the current branch
 conch 'HEAD~10..'
 
-# The commits on branch "dev"
+# Validate all the commits on branch "dev"
 conch 'main..dev'
 
-# A specific commit range
+# Validate a specific range of commit hashes
 conch '40b9741..2453f95'
 ```
 
@@ -189,9 +189,11 @@ conch -n 'HEAD~5..'
 
 Use a filter option to control the output.
 
-Note: Filters do not affect commit validation. All commits in the range
-are validated against the Conventional Commits specification, regardless
-of filter options.
+* Filters do not affect commit validation. All commits in the range
+  are validated against the Conventional Commits specification, regardless
+  of filter options.
+* In accordance with the specification, all filters perform case-insensitive
+  matching, except for `-B`, `--breaking`.
 
 #### Types (`-T`, `--types`)
 
