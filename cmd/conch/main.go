@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/csdev/conch/internal/commit"
+	"github.com/csdev/conch/internal/config"
 	"github.com/csdev/conch/internal/util"
 	flag "github.com/spf13/pflag"
 )
@@ -135,6 +136,8 @@ func main() {
 		}
 	}
 
+	cfg := config.Default()
+
 	commits, parseErr := commit.ParseRange(repoPath, flag.Arg(0))
 	if parseErr != nil {
 		log.Printf("%v", parseErr)
@@ -147,12 +150,29 @@ func main() {
 		filterBreaking || filterMinor || filterPatch || filterOther ||
 		outputList || outputFormat != "" || outputCount)
 
+	selectAll := !(filterBreaking || filterMinor || filterPatch || filterOther)
+
 	if needsOutput {
 		for _, c := range commits {
 			if filterTypes != nil && !filterTypes.Contains(c.Type) {
 				continue
 			}
 			if filterScopes != nil && !filterScopes.Contains(c.Scope) {
+				continue
+			}
+
+			selected := selectAll
+			if filterBreaking && c.IsBreaking {
+				selected = true
+			}
+			if filterMinor && cfg.Minor.Contains(c.Type) {
+				selected = true
+			}
+			if filterPatch && cfg.Patch.Contains(c.Type) {
+				selected = true
+			}
+
+			if !selected {
 				continue
 			}
 
