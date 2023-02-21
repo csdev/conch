@@ -10,55 +10,6 @@ import (
 	git "github.com/libgit2/git2go/v34"
 )
 
-type Footer struct {
-	Token string
-	Value string
-}
-
-// TODO: handle "BREAKING CHANGE" properly (the only footer that allows whitespace,
-// is case-sensitive, and requires the separator to be ": ")
-var footerPattern = regexp.MustCompile(`^` +
-	`(?P<token>[^:\pZ\x09-\x0D\x{FEFF}]+)` +
-	`(?P<separator>: | #)` +
-	`(?P<value>.*)` +
-	`$`)
-
-func extractFooters(lines []string) []Footer {
-	footers := make([]Footer, 0, 5)
-	var token string
-	var value strings.Builder
-
-	for _, line := range lines {
-		match := footerPattern.FindStringSubmatch(line)
-		if match == nil {
-			if token == "" {
-				// first line is not a footer -- abort
-				// this allows us to distinguish a footers section
-				// from the last paragraph of the body
-				return []Footer{}
-			} else {
-				// continuation of previous footer
-				// (conventional commits allows footer values to span multiple lines)
-				value.WriteString("\n")
-				value.WriteString(line)
-			}
-		} else {
-			if token != "" {
-				footers = append(footers, Footer{token, value.String()})
-			}
-			token = match[footerPattern.SubexpIndex("token")]
-			value.Reset()
-			value.WriteString(match[footerPattern.SubexpIndex("value")])
-		}
-	}
-
-	if token != "" {
-		footers = append(footers, Footer{token, value.String()})
-	}
-
-	return footers
-}
-
 // Commit represents a single conventional commit.
 type Commit struct {
 	Id          string

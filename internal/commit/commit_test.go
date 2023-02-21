@@ -7,79 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExtractFooters(t *testing.T) {
-	tests := []struct {
-		description string
-		lines       []string
-		footers     []Footer
-	}{
-		{
-			description: "empty lines has no footers",
-			lines:       []string{},
-			footers:     []Footer{},
-		},
-		{
-			description: "plain text has no footers",
-			lines:       []string{"some body text"},
-			footers:     []Footer{},
-		},
-		{
-			description: "the first line must be a footer",
-			lines: []string{
-				"some body text",
-				"Refs: 1234",
-			},
-			footers: []Footer{},
-		},
-		{
-			description: "footers can have different separators",
-			lines: []string{
-				"Refs #1234",
-				"Co-authored-by: John Doe <john.doe@example>",
-			},
-			footers: []Footer{
-				{"Refs", "1234"},
-				{"Co-authored-by", "John Doe <john.doe@example>"},
-			},
-		},
-		{
-			description: "footers can have duplicate tokens",
-			lines: []string{
-				"Refs: 1234",
-				"Refs: 5678",
-			},
-			footers: []Footer{
-				{"Refs", "1234"},
-				{"Refs", "5678"},
-			},
-		},
-		{
-			description: "footer values can span multiple lines",
-			lines: []string{
-				"Addendum: foo",
-				"bar",
-				"baz",
-			},
-			footers: []Footer{
-				{"Addendum", "foo\nbar\nbaz"},
-			},
-		},
-		{
-			description: "standard footer tokens cannot have whitespace",
-			lines: []string{
-				"issue ref: 1234",
-			},
-			footers: []Footer{},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
-			assert.Equal(t, test.footers, extractFooters(test.lines))
-		})
-	}
-}
-
 func TestSetFirstLine(t *testing.T) {
 	syntaxErr := errors.New("0: syntax error: message does not have a proper type/scope/description")
 
@@ -276,8 +203,8 @@ func TestSetMessage(t *testing.T) {
 				Type:        "feat",
 				Description: "implement the thing",
 				Footers: []Footer{
-					{"Refs", "#1234"},
-					{"Signed-off-by", "John Doe <john.doe@example>"},
+					{"Refs", ": ", "#1234"},
+					{"Signed-off-by", ": ", "John Doe <john.doe@example>"},
 				},
 			},
 		},
@@ -290,7 +217,7 @@ func TestSetMessage(t *testing.T) {
 				Description: "implement the thing",
 				Body:        "1a\n1b\n\n2a\n2b",
 				Footers: []Footer{
-					{"Refs", "#1234"},
+					{"Refs", ": ", "#1234"},
 				},
 			},
 			err: nil,
@@ -303,7 +230,7 @@ func TestSetMessage(t *testing.T) {
 				Type:        "feat",
 				Description: "implement the thing",
 				Footers: []Footer{
-					{"BREAKING-CHANGE", "the api\nis different"},
+					{"BREAKING-CHANGE", ": ", "the api\nis different"},
 				},
 			},
 			err: nil,
