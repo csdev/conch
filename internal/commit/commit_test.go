@@ -45,6 +45,7 @@ func TestSetFirstLine(t *testing.T) {
 				Type:        "feat",
 				IsExclaimed: true,
 				Description: "implement the thing",
+				IsBreaking:  true,
 			},
 			err: nil,
 		},
@@ -57,6 +58,7 @@ func TestSetFirstLine(t *testing.T) {
 				Scope:       "things",
 				IsExclaimed: true,
 				Description: "implement the thing",
+				IsBreaking:  true,
 			},
 			err: nil,
 		},
@@ -80,6 +82,7 @@ func TestSetFirstLine(t *testing.T) {
 				Scope:       "the-things!",
 				IsExclaimed: true,
 				Description: "implement the thing!",
+				IsBreaking:  true,
 			},
 			err: nil,
 		},
@@ -224,14 +227,28 @@ func TestSetMessage(t *testing.T) {
 		},
 		{
 			description: "multi-line footers",
-			message:     "feat: implement the thing\n\nBREAKING-CHANGE: the api\nis different\n",
+			message:     "feat: implement the thing\n\nRefs: 1234\n5678\n",
 			commit: &Commit{
 				Id:          "0",
 				Type:        "feat",
 				Description: "implement the thing",
 				Footers: []Footer{
-					{"BREAKING-CHANGE", ": ", "the api\nis different"},
+					{"Refs", ": ", "1234\n5678"},
 				},
+			},
+			err: nil,
+		},
+		{
+			description: "breaking change footer",
+			message:     "feat: implement the thing\n\nBREAKING CHANGE: the API is different",
+			commit: &Commit{
+				Id:          "0",
+				Type:        "feat",
+				Description: "implement the thing",
+				Footers: []Footer{
+					{"BREAKING CHANGE", ": ", "the API is different"},
+				},
+				IsBreaking: true,
 			},
 			err: nil,
 		},
@@ -256,6 +273,19 @@ func TestSetMessage(t *testing.T) {
 				Description: "implement the thing",
 			},
 			err: errors.New("0: syntax error: the commit summary must be followed by a blank line"),
+		},
+		{
+			description: "breaking change must be reported correctly",
+			message:     "feat: implement the thing\n\nbreaking-change: foo",
+			commit: &Commit{
+				Id:          "0",
+				Type:        "feat",
+				Description: "implement the thing",
+				Footers: []Footer{
+					{"breaking-change", ": ", "foo"},
+				},
+			},
+			err: ErrSyntax("0", ErrInvalidCaps.Error()),
 		},
 	}
 

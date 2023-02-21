@@ -19,6 +19,11 @@ type Commit struct {
 	Description string
 	Body        string
 	Footers     []Footer
+	IsBreaking  bool
+}
+
+func ErrSyntax(id string, msg string) error {
+	return fmt.Errorf("%s: syntax error: %v", id, msg)
 }
 
 // based on https://github.com/conventional-commits/parser/tree/v0.4.1#the-grammar
@@ -44,6 +49,10 @@ func (c *Commit) setFirstLine(s string) error {
 	c.Scope = match[firstLinePattern.SubexpIndex("scope")]
 	c.IsExclaimed = match[firstLinePattern.SubexpIndex("exclaim")] == "!"
 	c.Description = match[firstLinePattern.SubexpIndex("description")]
+
+	if c.IsExclaimed {
+		c.IsBreaking = true
+	}
 
 	return nil
 }
@@ -102,6 +111,17 @@ func (c *Commit) setMessage(msg string) error {
 			// The commit body consists of all the previous paragraphs.
 			c.Body = strings.TrimRight(strings.Join(lines[:parStart], "\n"), "\n")
 			c.Footers = footers
+		}
+	}
+
+	for _, footer := range c.Footers {
+		isBreaking, err := footer.IsBreakingChange()
+		if err != nil {
+			return ErrSyntax(c.Id, err.Error())
+		}
+		if isBreaking {
+			c.IsBreaking = true
+			break
 		}
 	}
 
