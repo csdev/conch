@@ -237,7 +237,10 @@ func (c *Commit) Summary() string {
 		s.WriteString(")")
 	}
 
-	if c.IsExclaimed {
+	// Since the summary does not show the footers, always use an exclamation
+	// point to indicate a breaking change (even if the original commit
+	// message did not use one).
+	if c.IsBreaking {
 		s.WriteString("!")
 	}
 

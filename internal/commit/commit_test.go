@@ -313,3 +313,54 @@ func TestSetMessage(t *testing.T) {
 		})
 	}
 }
+
+func TestSummary(t *testing.T) {
+	tests := []struct {
+		description string
+		commit      *Commit
+		summary     string
+	}{
+		{
+			description: "type and description",
+			commit: &Commit{
+				Type:        "feat",
+				Description: "implement the thing",
+			},
+			summary: "feat: implement the thing",
+		},
+		{
+			description: "scope",
+			commit: &Commit{
+				Type:        "feat",
+				Scope:       "things",
+				Description: "implement the thing",
+			},
+			summary: "feat(things): implement the thing",
+		},
+		{
+			description: "breaking change",
+			commit: &Commit{
+				Type:        "feat",
+				Description: "implement the thing",
+				IsBreaking:  true,
+			},
+			summary: "feat!: implement the thing",
+		},
+		{
+			description: "breaking change with scope",
+			commit: &Commit{
+				Type:        "feat",
+				Scope:       "things",
+				Description: "implement the thing",
+				IsBreaking:  true,
+			},
+			summary: "feat(things)!: implement the thing",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			assert.Equal(t, test.summary, test.commit.Summary())
+		})
+	}
+}
