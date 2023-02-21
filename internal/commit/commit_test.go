@@ -1,15 +1,12 @@
 package commit
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSetFirstLine(t *testing.T) {
-	syntaxErr := errors.New("0: syntax error: message does not have a proper type/scope/description")
-
 	tests := []struct {
 		description string
 		message     string
@@ -75,11 +72,11 @@ func TestSetFirstLine(t *testing.T) {
 		},
 		{
 			description: "it accepts punctuation",
-			message:     "feat.minor(the-things!)!: implement the thing!",
+			message:     "feat.minor(the:things!)!: implement the thing!",
 			commit: &Commit{
 				Id:          "0",
 				Type:        "feat.minor",
-				Scope:       "the-things!",
+				Scope:       "the:things!",
 				IsExclaimed: true,
 				Description: "implement the thing!",
 				IsBreaking:  true,
@@ -111,31 +108,49 @@ func TestSetFirstLine(t *testing.T) {
 			description: "it does not allow an empty line",
 			message:     "",
 			commit:      &Commit{Id: "0"},
-			err:         syntaxErr,
+			err:         ErrSummary("0"),
+		},
+		{
+			description: "it does not allow a missing type",
+			message:     "implement the thing",
+			commit:      &Commit{Id: "0"},
+			err:         ErrSummary("0"),
+		},
+		{
+			description: "it does not allow an empty type",
+			message:     ": implement the thing",
+			commit:      &Commit{Id: "0"},
+			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow whitespace in the type",
 			message:     "feat : implement the thing",
 			commit:      &Commit{Id: "0"},
-			err:         syntaxErr,
+			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow utf8 control whitespace in the type",
 			message:     "feat\t: implement the thing",
 			commit:      &Commit{Id: "0"},
-			err:         syntaxErr,
+			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow utf8 separator whitespace in the type",
 			message:     "feat\u2002: implement the thing",
 			commit:      &Commit{Id: "0"},
-			err:         syntaxErr,
+			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow utf8 bom/zwnbsp in the type",
 			message:     "feat\ufeff: implement the thing",
 			commit:      &Commit{Id: "0"},
-			err:         syntaxErr,
+			err:         ErrSummary("0"),
+		},
+		{
+			description: "it does not allow an empty description",
+			message:     "feat: ",
+			commit:      &Commit{Id: "0"},
+			err:         ErrSummary("0"),
 		},
 	}
 
@@ -256,13 +271,13 @@ func TestSetMessage(t *testing.T) {
 			description: "message cannot be empty",
 			message:     "",
 			commit:      &Commit{Id: "0"},
-			err:         errors.New("0: syntax error: message cannot be empty"),
+			err:         ErrEmpty("0"),
 		},
 		{
 			description: "first line must be correct",
 			message:     "asdf",
 			commit:      &Commit{Id: "0"},
-			err:         errors.New("0: syntax error: message does not have a proper type/scope/description"),
+			err:         ErrSummary("0"),
 		},
 		{
 			description: "blank line needed between summary and body",
@@ -272,7 +287,7 @@ func TestSetMessage(t *testing.T) {
 				Type:        "feat",
 				Description: "implement the thing",
 			},
-			err: errors.New("0: syntax error: the commit summary must be followed by a blank line"),
+			err: ErrBlankLine("0"),
 		},
 		{
 			description: "breaking change must be reported correctly",
@@ -285,7 +300,7 @@ func TestSetMessage(t *testing.T) {
 					{"breaking-change", ": ", "foo"},
 				},
 			},
-			err: ErrSyntax("0", ErrInvalidCaps.Error()),
+			err: ErrSyntax("0", ErrFooterCaps.Error()),
 		},
 	}
 

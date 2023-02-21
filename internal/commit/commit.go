@@ -23,7 +23,19 @@ type Commit struct {
 }
 
 func ErrSyntax(id string, msg string) error {
-	return fmt.Errorf("%s: syntax error: %v", id, msg)
+	return fmt.Errorf("%s: syntax error: %s", id, msg)
+}
+
+func ErrEmpty(id string) error {
+	return ErrSyntax(id, "commit message cannot be empty")
+}
+
+func ErrSummary(id string) error {
+	return ErrSyntax(id, "commit summary must contain a valid type, optional scope, and description")
+}
+
+func ErrBlankLine(id string) error {
+	return ErrSyntax(id, "the commit summary must be followed by a blank line")
 }
 
 // based on https://github.com/conventional-commits/parser/tree/v0.4.1#the-grammar
@@ -42,7 +54,7 @@ func NewCommit(id string) *Commit {
 func (c *Commit) setFirstLine(s string) error {
 	match := firstLinePattern.FindStringSubmatch(s)
 	if match == nil {
-		return fmt.Errorf("%s: syntax error: message does not have a proper type/scope/description", c.Id)
+		return ErrSummary(c.Id)
 	}
 
 	c.Type = match[firstLinePattern.SubexpIndex("type")]
@@ -61,7 +73,7 @@ func (c *Commit) setMessage(msg string) error {
 	scanner := bufio.NewScanner(strings.NewReader(msg))
 
 	if ok := scanner.Scan(); !ok {
-		return fmt.Errorf("%s: syntax error: message cannot be empty", c.Id)
+		return ErrEmpty(c.Id)
 	}
 	err := c.setFirstLine(scanner.Text())
 	if err != nil {
@@ -73,7 +85,7 @@ func (c *Commit) setMessage(msg string) error {
 	}
 
 	if scanner.Text() != "" {
-		return fmt.Errorf("%s: syntax error: the commit summary must be followed by a blank line", c.Id)
+		return ErrBlankLine(c.Id)
 	}
 
 	// The body of the commit message may consist of multiple paragraphs,

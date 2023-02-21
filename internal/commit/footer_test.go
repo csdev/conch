@@ -35,19 +35,19 @@ func TestIsBreakingChange(t *testing.T) {
 			description: "breaking change token must have correct separator",
 			footer:      &Footer{"BREAKING CHANGE", " #", "foo"},
 			isBreaking:  false,
-			err:         ErrInvalidSep,
+			err:         ErrFooterSep,
 		},
 		{
 			description: "breaking change token with whitespace must have correct capitalization",
 			footer:      &Footer{"Breaking change", ": ", "foo"},
 			isBreaking:  false,
-			err:         ErrInvalidCaps,
+			err:         ErrFooterCaps,
 		},
 		{
 			description: "breaking change token with hyphen must have correct capitalization",
 			footer:      &Footer{"Breaking-change", ": ", "foo"},
 			isBreaking:  false,
-			err:         ErrInvalidCaps,
+			err:         ErrFooterCaps,
 		},
 	}
 

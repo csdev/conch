@@ -22,8 +22,8 @@ type Footer struct {
 	Value string
 }
 
-var ErrInvalidSep = errors.New("BREAKING CHANGE must be followed by a colon and space (: )")
-var ErrInvalidCaps = errors.New("BREAKING CHANGE token must be capitalized")
+var ErrFooterSep = errors.New("BREAKING CHANGE must be followed by a colon and space (: )")
+var ErrFooterCaps = errors.New("BREAKING CHANGE token must be capitalized")
 
 // IsBreakingChange checks whether this footer designates a breaking change.
 // It returns an error if the breaking change footer is not formatted
@@ -33,11 +33,11 @@ func (f *Footer) IsBreakingChange() (bool, error) {
 		if f.Separator == ": " {
 			return true, nil
 		}
-		return false, ErrInvalidSep
+		return false, ErrFooterSep
 	}
 	normalizedToken := strings.ToLower(f.Token)
 	if normalizedToken == "breaking change" || normalizedToken == "breaking-change" {
-		return false, ErrInvalidCaps
+		return false, ErrFooterCaps
 	}
 	return false, nil
 }
