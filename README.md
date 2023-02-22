@@ -263,7 +263,24 @@ status code.
 
 ## Configuration File
 
-_coming soon_
+Conch can enforce custom commit policies. Example scenarios:
+
+* Require a specific set of commit types, scopes, or footers
+* Require all commits to specify a scope
+* Limit the length of the commit description
+* Ignore certain commit message patterns
+
+To customize the behavior of Conch, create a `conch.yml` file at the root
+of your repository. Use the [`conch.default.yml`](conch.default.yml) file
+as a starting point for your configuration, and see the comments there
+explaining the file format.
+
+Note: If you need to put your configuration file somewhere else, you can
+select it via `-c` or `--config`:
+
+```bash
+conch -c '/alternate/path/to/conch.yml' 'HEAD~5..'
+```
 
 ## Developer Information
 
