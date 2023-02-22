@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/csdev/conch/internal/cli"
 	"github.com/csdev/conch/internal/commit"
 	"github.com/csdev/conch/internal/config"
 	"github.com/csdev/conch/internal/util"
@@ -38,16 +39,8 @@ func main() {
 		configPath string
 		repoPath   string
 
-		filterTypes    util.CaseInsensitiveSet
-		filterScopes   util.CaseInsensitiveSet
-		filterBreaking bool
-		filterMinor    bool
-		filterPatch    bool
-		filterOther    bool
-
-		outputList   bool
-		outputFormat string
-		outputCount  bool
+		filters cli.Filters
+		outputs cli.Outputs
 	)
 
 	// meta
@@ -60,19 +53,25 @@ func main() {
 	flag.StringVarP(&repoPath, "repo", "r", repoPath, "path to the git repository")
 
 	// output filtering
-	flag.VarP(&filterTypes, "types", "T", "filter commits by type")
-	flag.VarP(&filterScopes, "scopes", "S", "filter commits by scope")
-	flag.BoolVarP(&filterBreaking, "breaking", "B", filterBreaking, "show breaking changes (e.g., feat!)")
-	flag.BoolVarP(&filterMinor, "minor", "M", filterMinor, "show minor changes (e.g., feat)")
-	flag.BoolVarP(&filterPatch, "patch", "P", filterPatch, "show patch changes (e.g., fix)")
-	flag.BoolVarP(&filterOther, "uncategorized", "U", filterOther,
+	flag.VarP(&filters.Types, "types", "T", "filter commits by type")
+	flag.VarP(&filters.Scopes, "scopes", "S", "filter commits by scope")
+
+	flag.BoolVarP(&filters.Selections.Breaking, "breaking", "B", filters.Selections.Breaking,
+		"show breaking changes (e.g., feat!)")
+	flag.BoolVarP(&filters.Selections.Minor, "minor", "M", filters.Selections.Minor,
+		"show minor changes (e.g., feat)")
+	flag.BoolVarP(&filters.Selections.Patch, "patch", "P", filters.Selections.Patch,
+		"show patch changes (e.g., fix)")
+	flag.BoolVarP(&filters.Selections.Uncategorized, "uncategorized", "U", filters.Selections.Uncategorized,
 		"show other changes that are not breaking/minor/patch")
 
 	// output formatting
-	flag.BoolVarP(&outputList, "list", "l", outputList, "list matching commits")
-	flag.StringVarP(&outputFormat, "format", "f", outputFormat,
+	flag.BoolVarP(&outputs.List, "list", "l", outputs.List,
+		"list matching commits")
+	flag.StringVarP(&outputs.Format, "format", "f", outputs.Format,
 		"format matching commits using a Go template")
-	flag.BoolVarP(&outputCount, "count", "n", outputCount, "show the number of matching commits")
+	flag.BoolVarP(&outputs.Count, "count", "n", outputs.Count,
+		"show the number of matching commits")
 
 	flag.CommandLine.SortFlags = false
 
@@ -82,8 +81,8 @@ func main() {
 		// https://github.com/spf13/pflag/issues/245
 		// When calling Usage(), the program should exit soon after,
 		// so doing this shouldn't actually break normal operation.
-		filterTypes = nil
-		filterScopes = nil
+		filters.Types = nil
+		filters.Scopes = nil
 
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] <revision_range>\n", os.Args[0])
 		flag.PrintDefaults()
@@ -127,10 +126,9 @@ func main() {
 	}
 
 	var tpl *template.Template
-	if outputFormat != "" {
-		repFormat := strings.NewReplacer(`\t`, "\t", `\n`, "\n").Replace(outputFormat)
+	if outputs.Format != "" {
 		var err error
-		tpl, err = template.New("commit").Parse(repFormat)
+		tpl, err = util.OutputTemplate("commit", outputs.Format)
 		if err != nil {
 			log.Fatalf("invalid template: %v", err)
 		}
@@ -145,30 +143,25 @@ func main() {
 	}
 
 	var numCommits int
+	selectAll := !filters.Selections.Any()
 
-	needsOutput := (filterScopes != nil || filterTypes != nil ||
-		filterBreaking || filterMinor || filterPatch || filterOther ||
-		outputList || outputFormat != "" || outputCount)
-
-	selectAll := !(filterBreaking || filterMinor || filterPatch || filterOther)
-
-	if needsOutput {
+	if filters.Any() || outputs.Any() {
 		for _, c := range commits {
-			if filterTypes != nil && !filterTypes.Contains(c.Type) {
+			if filters.Types != nil && !filters.Types.Contains(c.Type) {
 				continue
 			}
-			if filterScopes != nil && !filterScopes.Contains(c.Scope) {
+			if filters.Scopes != nil && !filters.Scopes.Contains(c.Scope) {
 				continue
 			}
 
 			selected := selectAll
-			if filterBreaking && c.IsBreaking {
+			if filters.Selections.Breaking && c.IsBreaking {
 				selected = true
 			}
-			if filterMinor && cfg.Minor.Contains(c.Type) {
+			if filters.Selections.Minor && cfg.Minor.Contains(c.Type) {
 				selected = true
 			}
-			if filterPatch && cfg.Patch.Contains(c.Type) {
+			if filters.Selections.Patch && cfg.Patch.Contains(c.Type) {
 				selected = true
 			}
 
@@ -181,14 +174,14 @@ func main() {
 				if err != nil {
 					log.Printf("%v", err)
 				}
-			} else if !outputCount {
+			} else if !outputs.Count {
 				fmt.Printf("%s: %s\n", c.Id[:7], c.Summary())
 			}
 			numCommits += 1
 		}
 	}
 
-	if outputCount {
+	if outputs.Count {
 		fmt.Printf("%d\n", numCommits)
 	}
 
