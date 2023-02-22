@@ -135,6 +135,24 @@ func main() {
 	}
 
 	cfg := config.Default()
+	if configPath == "" {
+		p, err := cli.StandardConfigPath(repoPath)
+		if err != nil {
+			log.Fatalf("config error: %v", err)
+		}
+		configPath = p
+	}
+	if configPath != "" {
+		// open specified config file
+		file, err := os.Open(configPath)
+		if err != nil {
+			log.Fatalf("config error: %v", err)
+		}
+		cfg, err = config.Load(file)
+		if err != nil {
+			log.Fatalf("config error: %v", err)
+		}
+	}
 
 	commits, parseErr := commit.ParseRange(repoPath, flag.Arg(0))
 	if parseErr != nil {
