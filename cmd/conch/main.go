@@ -172,14 +172,19 @@ func main() {
 				continue
 			}
 
+			cls := c.Classification(cfg)
 			selected := selectAll
-			if filters.Selections.Breaking && c.IsBreaking {
+
+			if filters.Selections.Breaking && cls == commit.Breaking {
 				selected = true
 			}
-			if filters.Selections.Minor && cfg.Minor.Contains(c.Type) {
+			if filters.Selections.Minor && cls == commit.Minor {
 				selected = true
 			}
-			if filters.Selections.Patch && cfg.Patch.Contains(c.Type) {
+			if filters.Selections.Patch && cls == commit.Patch {
+				selected = true
+			}
+			if filters.Selections.Uncategorized && cls == commit.Uncategorized {
 				selected = true
 			}
 

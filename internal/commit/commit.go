@@ -249,3 +249,23 @@ func (c *Commit) Summary() string {
 
 	return s.String()
 }
+
+const (
+	Breaking = iota
+	Minor
+	Patch
+	Uncategorized
+)
+
+func (c *Commit) Classification(cfg *config.Config) int {
+	if c.IsBreaking {
+		return Breaking
+	}
+	if cfg.Policy.Minor.Contains(c.Type) {
+		return Minor
+	}
+	if cfg.Policy.Patch.Contains(c.Type) {
+		return Patch
+	}
+	return Uncategorized
+}

@@ -3,6 +3,7 @@ package commit
 import (
 	"testing"
 
+	"github.com/csdev/conch/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -361,6 +362,51 @@ func TestSummary(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 			assert.Equal(t, test.summary, test.commit.Summary())
+		})
+	}
+}
+
+func TestClassification(t *testing.T) {
+	tests := []struct {
+		description string
+		commit      *Commit
+		expected    int
+	}{
+		{
+			description: "it identifies a breaking change",
+			commit: &Commit{
+				Type:        "feat",
+				IsExclaimed: true,
+				IsBreaking:  true,
+			},
+			expected: Breaking,
+		},
+		{
+			description: "it identifies a minor change",
+			commit: &Commit{
+				Type: "feat",
+			},
+			expected: Minor,
+		},
+		{
+			description: "it identifies a patch",
+			commit: &Commit{
+				Type: "fix",
+			},
+			expected: Patch,
+		},
+		{
+			description: "it identifies an uncategorized change",
+			commit: &Commit{
+				Type: "chore",
+			},
+			expected: Uncategorized,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			assert.Equal(t, test.expected, test.commit.Classification(config.Default()))
 		})
 	}
 }
