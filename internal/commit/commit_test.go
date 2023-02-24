@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/csdev/conch/internal/config"
+	"github.com/csdev/conch/internal/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -311,6 +312,153 @@ func TestSetMessage(t *testing.T) {
 			err := c.setMessage(test.message)
 			assert.Equal(t, test.commit, c)
 			assert.Equal(t, test.err, err)
+		})
+	}
+}
+
+func TestApplyPolicy(t *testing.T) {
+	commit := &Commit{
+		Id:          "0",
+		Type:        "chore",
+		Scope:       "deps",
+		Description: "upgrade stuff",
+		Footers: []Footer{
+			{"Refs", ": ", "1234"},
+		},
+	}
+
+	tests := []struct {
+		description string
+		cfg         *config.Config
+		err         error
+	}{
+		{
+			description: "it reports no violations",
+			cfg:         config.Default(),
+			err:         nil,
+		},
+		{
+			description: "it reports an unrecognized commit type",
+			cfg: &config.Config{
+				Policy: config.Policy{
+					Type: config.Type{
+						Types: util.NewCaseInsensitiveSet([]string{"feat", "fix"}),
+					},
+				},
+			},
+			err: ErrUnrecognizedType("0"),
+		},
+		{
+			description: "it reports an unrecognized commit scope",
+			cfg: &config.Config{
+				Policy: config.Policy{
+					Scope: config.Scope{
+						Scopes: util.NewCaseInsensitiveSet([]string{"API"}),
+					},
+				},
+			},
+			err: ErrUnrecognizedScope("0"),
+		},
+		{
+			description: "it checks for a description exceeding the min length",
+			cfg: &config.Config{
+				Policy: config.Policy{
+					Description: config.Description{
+						MinLength: 14,
+					},
+				},
+			},
+			err: ErrDescriptionLength("0", 14, 0),
+		},
+		{
+			description: "it checks for a description exceeding the max length",
+			cfg: &config.Config{
+				Policy: config.Policy{
+					Description: config.Description{
+						MaxLength: 12,
+					},
+				},
+			},
+			err: ErrDescriptionLength("0", 1, 12),
+		},
+		{
+			description: "it reports an unrecognized token in the footers",
+			cfg: &config.Config{
+				Policy: config.Policy{
+					Footer: config.Footer{
+						Tokens: util.NewCaseInsensitiveSet([]string{
+							"BREAKING CHANGE",
+							"BREAKING-CHANGE",
+						}),
+					},
+				},
+			},
+			err: ErrUnrecognizedFooter("0", "Refs"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			assert.Equal(t, test.err, commit.ApplyPolicy(test.cfg))
+		})
+	}
+}
+
+func TestApplyPolicySlice(t *testing.T) {
+	commits := []*Commit{
+		{
+			Id:          "0",
+			Type:        "chore",
+			Scope:       "deps",
+			Description: "upgrade stuff",
+			Footers: []Footer{
+				{"Refs", ": ", "1234"},
+			},
+		},
+		{
+			Id:          "1",
+			Type:        "ci",
+			Description: "add environment variables",
+			Footers: []Footer{
+				{"Refs", ": ", "5678"},
+			},
+		},
+	}
+
+	tests := []struct {
+		description string
+		cfg         *config.Config
+		err         error
+	}{
+		{
+			description: "no errors",
+			cfg:         config.Default(),
+			err:         nil,
+		},
+		{
+			description: "multiple errors",
+			cfg: &config.Config{
+				Policy: config.Policy{
+					Type: config.Type{
+						Types: util.NewCaseInsensitiveSet([]string{"feat", "fix", "chore"}),
+					},
+					Scope: config.Scope{
+						Scopes: util.NewCaseInsensitiveSet([]string{""}),
+					},
+				},
+			},
+			err: &ParseError{
+				Errors: []string{
+					ErrUnrecognizedScope("0").Error(),
+					ErrUnrecognizedType("1").Error(),
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			assert.Equal(t, test.err, ApplyPolicy(commits, test.cfg))
 		})
 	}
 }

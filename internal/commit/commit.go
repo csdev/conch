@@ -38,6 +38,37 @@ func ErrBlankLine(id string) error {
 	return ErrSyntax(id, "the commit summary must be followed by a blank line")
 }
 
+func ErrPolicy(id string, msg string) error {
+	return fmt.Errorf("%s: policy error: %s", id, msg)
+}
+
+func ErrUnrecognizedType(id string) error {
+	return ErrPolicy(id, "unrecognized commit type")
+}
+
+func ErrRequiredScope(id string) error {
+	return ErrPolicy(id, "commit must have a scope")
+}
+
+func ErrUnrecognizedScope(id string) error {
+	return ErrPolicy(id, "unrecognized commit scope")
+}
+
+func ErrDescriptionLength(id string, min int, max int) error {
+	if min < 1 {
+		min = 1
+	}
+
+	if max > 0 {
+		return ErrPolicy(id, fmt.Sprintf("description must be between %d and %d chars long", min, max))
+	}
+	return ErrPolicy(id, fmt.Sprintf("description must be longer than %d chars", min))
+}
+
+func ErrUnrecognizedFooter(id string, token string) error {
+	return ErrPolicy(id, fmt.Sprintf("unrecognized footer: %s", token))
+}
+
 // based on https://github.com/conventional-commits/parser/tree/v0.4.1#the-grammar
 var firstLinePattern = regexp.MustCompile(`^` +
 	`(?P<type>[^():!\pZ\x09-\x0D\x{FEFF}]+)` +
@@ -186,28 +217,26 @@ func ParseRange(repoPath string, rangeSpec string) ([]*Commit, error) {
 
 // ApplyPolicy checks if the commit is semantically valid
 // according to the supplied policy object.
-func (c *Commit) ApplyPolicy(policy config.Policy) error {
+func (c *Commit) ApplyPolicy(cfg *config.Config) error {
+	policy := &cfg.Policy
 	if policy.Type.Types != nil && !policy.Type.Types.Contains(c.Type) {
-		return fmt.Errorf("%s: policy does not allow commit type: %s", c.Id, c.Type)
+		return ErrUnrecognizedType(c.Id)
 	}
 
 	if c.Scope != "" {
 		if policy.Scope.Required {
-			return fmt.Errorf("%s: policy requires a commit scope", c.Id)
+			return ErrRequiredScope(c.Id)
 		}
 		if policy.Scope.Scopes != nil && !policy.Scope.Scopes.Contains(c.Scope) {
-			return fmt.Errorf("%s: policy does not allow commit scope: %s", c.Id, c.Scope)
+			return ErrUnrecognizedScope(c.Id)
 		}
 	}
 
 	descLen := len(c.Description)
-	if descLen < policy.Description.MinLength {
-		return fmt.Errorf("%s: policy requires a description longer than %d chars",
-			c.Id, policy.Description.MinLength)
-	}
-	if policy.Description.MaxLength > 0 && descLen > policy.Description.MaxLength {
-		return fmt.Errorf("%s: policy limits the description to %d chars",
-			c.Id, policy.Description.MaxLength)
+	min := policy.Description.MinLength
+	max := policy.Description.MaxLength
+	if (descLen < min) || (max > 0 && descLen > max) {
+		return ErrDescriptionLength(c.Id, min, max)
 	}
 
 	// CAUTION: Tokens in footers need not be unique.
@@ -216,12 +245,28 @@ func (c *Commit) ApplyPolicy(policy config.Policy) error {
 	if c.Footers != nil {
 		for _, f := range c.Footers {
 			if policy.Footer.Tokens != nil && !policy.Footer.Tokens.Contains(f.Token) {
-				return fmt.Errorf("%s: policy does not allow footer token: %s", c.Id, f.Token)
+				return ErrUnrecognizedFooter(c.Id, f.Token)
 			}
 		}
 		// TODO: check requiredTokens
 	}
 
+	return nil
+}
+
+func ApplyPolicy(commits []*Commit, cfg *config.Config) error {
+	parseErr := NewParseError()
+
+	for _, c := range commits {
+		err := c.ApplyPolicy(cfg)
+		if err != nil {
+			parseErr.Append(err)
+		}
+	}
+
+	if parseErr.HasErrors() {
+		return parseErr
+	}
 	return nil
 }
 

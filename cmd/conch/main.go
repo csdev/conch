@@ -160,6 +160,12 @@ func main() {
 		// don't exit yet -- try outputting any valid commits that were found
 	}
 
+	policyErr := commit.ApplyPolicy(commits, cfg)
+	if policyErr != nil {
+		log.Printf("%v", policyErr)
+		// don't exit yet -- try outputting any valid commits that were found
+	}
+
 	var numCommits int
 	selectAll := !filters.Selections.Any()
 
@@ -208,7 +214,7 @@ func main() {
 		fmt.Printf("%d\n", numCommits)
 	}
 
-	if parseErr != nil {
+	if parseErr != nil || policyErr != nil {
 		log.Fatalln("failed to parse some commits")
 	}
 }
