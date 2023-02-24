@@ -243,12 +243,34 @@ conch -S 'post,' 'HEAD~5..'
 36a3e9d: feat(post): python type annotations
 ```
 
-#### Multiple Filter Options
+#### Impact
 
-Filters use AND logic:
+* `-B`, `--breaking`: select commits marked with `!` or a `BREAKING CHANGE` footer.
+* `-M`, `--minor`: select minor changes like `feat`
+* `-P`, `--patch`: select patch changes like `fix`
+* `-U`, `--uncategorized`: select all other commit types
+
+Example: List all patches and other low-impact changes:
 
 ```bash
-conch -T fix -S post 'HEAD~5..'
+conch -P -U 'HEAD~5..'
+```
+
+```
+2453f95: fix(post): add runServices to dev container sample code
+647e997: chore(deps): upgrade gems
+```
+
+To customize which commit types are treated as minor and patch, use a `conch.yml`
+configuration file, described later in this document.
+
+#### Multiple Filter Options
+
+A commit matches the filters if the type AND scope are correct, AND the impact
+of the change matches one of the impact filters.
+
+```bash
+conch -T fix -S post -M -P -U 'HEAD~5..'
 ```
 
 ```
