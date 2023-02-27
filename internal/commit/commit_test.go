@@ -459,6 +459,74 @@ func TestApplyPolicy(t *testing.T) {
 	}
 }
 
+func TestApplyPolicy_RequiredFields(t *testing.T) {
+	cfg := &config.Config{
+		Policy: config.Policy{
+			Scope: config.Scope{
+				Required: true,
+			},
+			Footer: config.Footer{
+				RequiredTokens: util.NewCaseInsensitiveSet([]string{
+					"refs",
+					"signed-off-by",
+				}),
+			},
+		},
+	}
+
+	tests := []struct {
+		description string
+		commit      *Commit
+		err         error
+	}{
+		{
+			description: "it checks for a missing scope",
+			commit: &Commit{
+				Id:          "0",
+				Type:        "chore",
+				Description: "upgrade stuff",
+				Footers: []Footer{
+					{"Refs", ": ", "1234"},
+					{"Signed-off-by", ": ", "John Doe <john.doe@example>"},
+				},
+			},
+			err: ErrRequiredScope("0"),
+		},
+		{
+			description: "it checks for missing footers",
+			commit: &Commit{
+				Id:          "0",
+				Type:        "chore",
+				Scope:       "deps",
+				Description: "upgrade stuff",
+				Footers: []Footer{
+					{"Refs", ": ", "1234"},
+				},
+			},
+			err: ErrRequiredFooters("0", util.NewCaseInsensitiveSet([]string{"signed-off-by"})),
+		},
+		{
+			description: "it reports multiple missing footers",
+			commit: &Commit{
+				Id:          "0",
+				Type:        "chore",
+				Scope:       "deps",
+				Description: "upgrade stuff",
+			},
+			err: ErrRequiredFooters("0", util.NewCaseInsensitiveSet([]string{
+				"refs",
+				"signed-off-by",
+			})),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			assert.Equal(t, test.err, test.commit.ApplyPolicy(cfg))
+		})
+	}
+}
+
 func TestApplyPolicySlice(t *testing.T) {
 	commits := []*Commit{
 		{

@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/csdev/conch/internal/config"
+	"github.com/csdev/conch/internal/util"
 	git "github.com/libgit2/git2go/v34"
 )
 
@@ -67,6 +69,15 @@ func ErrDescriptionLength(id string, min int, max int) error {
 
 func ErrUnrecognizedFooter(id string, token string) error {
 	return ErrPolicy(id, fmt.Sprintf("unrecognized footer: %s", token))
+}
+
+func ErrRequiredFooters(id string, tokens util.CaseInsensitiveSet) error {
+	ts := make([]string, 0, len(tokens))
+	for token := range tokens {
+		ts = append(ts, token)
+	}
+	sort.Strings(ts) // makes errors easily comparable
+	return ErrPolicy(id, fmt.Sprintf("commit must include footers: %s", strings.Join(ts, ", ")))
 }
 
 // based on https://github.com/conventional-commits/parser/tree/v0.4.1#the-grammar
@@ -241,10 +252,11 @@ func (c *Commit) ApplyPolicy(cfg *config.Config) error {
 		return ErrUnrecognizedType(c.Id)
 	}
 
-	if c.Scope != "" {
+	if c.Scope == "" {
 		if policy.Scope.Required {
 			return ErrRequiredScope(c.Id)
 		}
+	} else {
 		if policy.Scope.Scopes != nil && !policy.Scope.Scopes.Contains(c.Scope) {
 			return ErrUnrecognizedScope(c.Id)
 		}
@@ -260,13 +272,20 @@ func (c *Commit) ApplyPolicy(cfg *config.Config) error {
 	// CAUTION: Tokens in footers need not be unique.
 	// For example, Github uses one "Co-authored-by" footer for each co-author.
 	// https://docs.github.com/en/pull-requests/committing-changes-to-your-project/creating-and-editing-commits/creating-a-commit-with-multiple-authors
-	if c.Footers != nil {
-		for _, f := range c.Footers {
-			if policy.Footer.Tokens != nil && !policy.Footer.Tokens.Contains(f.Token) {
-				return ErrUnrecognizedFooter(c.Id, f.Token)
-			}
+	var reqTokens util.CaseInsensitiveSet
+	if policy.Footer.RequiredTokens != nil {
+		reqTokens = policy.Footer.RequiredTokens.Copy()
+	}
+
+	for _, f := range c.Footers {
+		if policy.Footer.Tokens != nil && !policy.Footer.Tokens.Contains(f.Token) {
+			return ErrUnrecognizedFooter(c.Id, f.Token)
 		}
-		// TODO: check requiredTokens
+		reqTokens.Remove(f.Token)
+	}
+
+	if len(reqTokens) > 0 {
+		return ErrRequiredFooters(c.Id, reqTokens)
 	}
 
 	return nil

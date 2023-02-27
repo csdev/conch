@@ -59,9 +59,22 @@ func (s *CaseInsensitiveSet) Type() string {
 	return "comma_separated_strings"
 }
 
+func (s CaseInsensitiveSet) Copy() CaseInsensitiveSet {
+	s2 := make(CaseInsensitiveSet)
+	for k, v := range s {
+		s2[k] = v
+	}
+	return s2
+}
+
 func (s CaseInsensitiveSet) Add(item string) {
 	key := strings.ToLower(item)
 	s[key] = item
+}
+
+func (s CaseInsensitiveSet) Remove(item string) {
+	key := strings.ToLower(item)
+	delete(s, key)
 }
 
 func (s CaseInsensitiveSet) Contains(item string) bool {
