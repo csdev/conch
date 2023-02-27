@@ -154,7 +154,7 @@ func main() {
 		}
 	}
 
-	commits, parseErr := commit.ParseRange(repoPath, flag.Arg(0))
+	commits, parseErr := commit.ParseRange(repoPath, flag.Arg(0), cfg)
 	if parseErr != nil {
 		log.Printf("%v", parseErr)
 		// don't exit yet -- try outputting any valid commits that were found

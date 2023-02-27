@@ -316,6 +316,61 @@ func TestSetMessage(t *testing.T) {
 	}
 }
 
+func TestIsExcluded(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         string
+		cfg         *config.Config
+		expected    bool
+	}{
+		{
+			description: "it allows the commit if there are no prefixes",
+			msg:         "Merge pull request #1234",
+			cfg:         &config.Config{},
+			expected:    false,
+		},
+		{
+			description: "it allows the commit if there are no matching prefixes",
+			msg:         "Merge pull request #1234",
+			cfg: &config.Config{
+				Exclude: config.Exclude{
+					Prefixes: util.NewCaseInsensitiveSet([]string{
+						"pull request",
+						"#1234",
+					}),
+				},
+			},
+			expected: false,
+		},
+		{
+			description: "it excludes the commit if the prefix matches exactly",
+			msg:         "Merge pull request #1234",
+			cfg: &config.Config{
+				Exclude: config.Exclude{
+					Prefixes: util.NewCaseInsensitiveSet([]string{"Merge pull request"}),
+				},
+			},
+			expected: true,
+		},
+		{
+			description: "it performs case insensitive matching",
+			msg:         "Merge pull request #1234",
+			cfg: &config.Config{
+				Exclude: config.Exclude{
+					Prefixes: util.NewCaseInsensitiveSet([]string{"merge pull request"}),
+				},
+			},
+			expected: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			assert.Equal(t, test.expected, isExcluded(test.msg, test.cfg))
+		})
+	}
+}
+
 func TestApplyPolicy(t *testing.T) {
 	commit := &Commit{
 		Id:          "0",

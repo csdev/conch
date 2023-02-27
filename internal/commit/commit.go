@@ -171,7 +171,20 @@ func (c *Commit) setMessage(msg string) error {
 	return nil
 }
 
-func ParseRange(repoPath string, rangeSpec string) ([]*Commit, error) {
+func isExcluded(msg string, cfg *config.Config) bool {
+	if cfg.Exclude.Prefixes == nil {
+		return false
+	}
+	m := strings.ToLower(msg)
+	for prefix := range cfg.Exclude.Prefixes {
+		if strings.HasPrefix(m, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func ParseRange(repoPath string, rangeSpec string, cfg *config.Config) ([]*Commit, error) {
 	commits := make([]*Commit, 0, 10)
 
 	repo, err := git.OpenRepository(repoPath)
@@ -194,9 +207,14 @@ func ParseRange(repoPath string, rangeSpec string) ([]*Commit, error) {
 	parseErr := NewParseError()
 
 	gitErr = revwalk.Iterate(func(gitCommit *git.Commit) bool {
+		msg := gitCommit.Message()
+		if isExcluded(msg, cfg) {
+			return true // continues iteration, skipping over commit parsing
+		}
+
 		id := gitCommit.AsObject().Id().String() // the full commit hash from the git oid
 		c := NewCommit(id)
-		e := c.setMessage(gitCommit.Message())
+		e := c.setMessage(msg)
 		if e == nil {
 			commits = append(commits, c)
 		} else {
