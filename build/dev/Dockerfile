@@ -8,7 +8,7 @@ ARG SERVICE=go
 ARG UID=1000
 ARG GID=1000
 
-ARG LIBGIT2_VERSION=1.5.1
+ARG LIBGIT2_VERSION=1.5
 
 RUN apk add --no-cache gcc "libgit2-dev~=${LIBGIT2_VERSION}" musl-dev pkgconf tini
 

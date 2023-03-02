@@ -14,7 +14,7 @@ RUN make package
 FROM golang:1.19-alpine3.17 AS builder
 
 ARG SERVICE=go
-ARG LIBGIT2_VERSION=1.5.1
+ARG LIBGIT2_VERSION=1.5
 
 RUN apk add --no-cache gcc git musl-dev pkgconf
 
