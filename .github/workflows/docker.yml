@@ -48,7 +48,7 @@ jobs:
       -
         name: Test dev image
         run: >
-          docker run --rm "$IMAGE_NAME"-dev:gha
+          docker run --rm "$IMAGE_NAME"-dev:gha \
             /bin/sh -c 'go test -coverprofile=c.out "./..." && go tool cover -func=c.out'
       # -
       #   name: Login to Docker Hub
