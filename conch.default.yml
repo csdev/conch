@@ -49,7 +49,7 @@ policy:
     tokens: []
 
 exclude:
-  # Commit messages that begin with these phrases will be ignored.
+  # Commit messages that begin with these phrases will be completely ignored.
+  # They will not be validated, and they will not appear in any output.
   # Useful for excluding auto-generated commits from Github and other third-party tools.
-  prefixes:
-    - "initial commit"
+  prefixes: []

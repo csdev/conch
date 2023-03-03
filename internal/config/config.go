@@ -58,9 +58,6 @@ func Default() *Config {
 				MinLength: 1,
 			},
 		},
-		Exclude: Exclude{
-			Prefixes: util.NewCaseInsensitiveSet([]string{"initial commit"}),
-		},
 	}
 }
 

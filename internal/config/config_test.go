@@ -34,8 +34,7 @@ policy:
     tokens: []
 
 exclude:
-  prefixes:
-    - "initial commit"
+  prefixes: []
 `
 
 const extraneousConfig = `
