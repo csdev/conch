@@ -1,11 +1,15 @@
 package commit
 
 import (
+	"os"
 	"testing"
+	"time"
 
 	"github.com/csdev/conch/internal/config"
 	"github.com/csdev/conch/internal/util"
+	git "github.com/libgit2/git2go/v34"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSetFirstLine(t *testing.T) {
@@ -367,6 +371,113 @@ func TestIsExcluded(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 			assert.Equal(t, test.expected, isExcluded(test.msg, test.cfg))
+		})
+	}
+}
+
+func makeTestRepo(t *testing.T, msgs []string) (string, []*git.Oid) {
+	// make a git repo inside a temp directory that we can use for testing
+	dir, err := os.MkdirTemp("", "conch_tests_")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		os.RemoveAll(dir)
+	})
+
+	repo, err := git.InitRepository(dir, true)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		repo.Free()
+	})
+
+	// get the current index and write it to a tree, so we can use it
+	// to construct a blank commit
+	// (we don't care about the files, just the commit messages)
+	idx, err := repo.Index()
+	require.NoError(t, err)
+
+	tree, err := idx.WriteTree()
+	require.NoError(t, err)
+
+	// create a signature object, which is used to specify the author
+	// and the committer
+	sig := &git.Signature{
+		Name:  "Test User",
+		Email: "test.user@email.example",
+		When:  time.Now(),
+	}
+
+	var head *git.Oid
+	oids := make([]*git.Oid, 0, len(msgs))
+
+	for _, msg := range msgs {
+		head, err = repo.CreateCommitFromIds("HEAD", sig, sig, msg, tree, head)
+		require.NoError(t, err)
+		oids = append(oids, head)
+	}
+
+	return dir, oids
+}
+
+func TestParseRange(t *testing.T) {
+	dir, oids := makeTestRepo(t, []string{
+		"initial commit",
+		"the next commit",
+		"chore: the most recent commit",
+	})
+
+	tests := []struct {
+		description     string
+		repoPath        string
+		rangeSpec       string
+		cfg             *config.Config
+		expectedCommits []*Commit
+		expectedErr     error
+	}{
+		{
+			description: "it returns the commits in the range",
+			repoPath:    dir,
+			rangeSpec:   "HEAD~1..",
+			cfg:         config.Default(),
+			expectedCommits: []*Commit{
+				{
+					Id:          oids[2].String(),
+					Type:        "chore",
+					Description: "the most recent commit",
+				},
+			},
+			expectedErr: nil,
+		},
+		{
+			description:     "it returns errors in the range",
+			repoPath:        dir,
+			rangeSpec:       "HEAD~2..HEAD~1",
+			cfg:             config.Default(),
+			expectedCommits: []*Commit{},
+			expectedErr: &ParseError{
+				Errors: []string{
+					ErrSummary(oids[1].String()).Error(),
+				},
+			},
+		},
+		{
+			description: "it excludes commits based on the config",
+			repoPath:    dir,
+			rangeSpec:   "HEAD~2..HEAD~1",
+			cfg: &config.Config{
+				Exclude: config.Exclude{
+					Prefixes: util.NewCaseInsensitiveSet([]string{"the next"}),
+				},
+			},
+			expectedCommits: []*Commit{},
+			expectedErr:     nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			commits, err := ParseRange(test.repoPath, test.rangeSpec, test.cfg)
+			assert.Equal(t, test.expectedCommits, commits)
+			assert.Equal(t, test.expectedErr, err)
 		})
 	}
 }
