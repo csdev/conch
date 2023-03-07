@@ -448,6 +448,14 @@ func TestParseRange(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
+			description:     "it returns an empty slice if there are no commits in the range",
+			repoPath:        dir,
+			rangeSpec:       "HEAD..HEAD",
+			cfg:             config.Default(),
+			expectedCommits: []*Commit{},
+			expectedErr:     nil,
+		},
+		{
 			description:     "it returns errors in the range",
 			repoPath:        dir,
 			rangeSpec:       "HEAD~2..HEAD~1",
@@ -478,6 +486,34 @@ func TestParseRange(t *testing.T) {
 			commits, err := ParseRange(test.repoPath, test.rangeSpec, test.cfg)
 			assert.Equal(t, test.expectedCommits, commits)
 			assert.Equal(t, test.expectedErr, err)
+		})
+	}
+
+	tests2 := []struct {
+		description  string
+		repoPath     string
+		rangeSpec    string
+		errorPattern string
+	}{
+		{
+			description:  "it returns an error for an invalid path",
+			repoPath:     "./__invalid_path__",
+			rangeSpec:    "..",
+			errorPattern: "failed to resolve path",
+		},
+		{
+			description:  "it returns an error for an invalid commit range",
+			repoPath:     dir,
+			rangeSpec:    "HEAD",
+			errorPattern: "invalid revspec",
+		},
+	}
+
+	for _, test := range tests2 {
+		t.Run(test.description, func(t *testing.T) {
+			commits, err := ParseRange(test.repoPath, test.rangeSpec, config.Default())
+			assert.Equal(t, []*Commit{}, commits)
+			assert.ErrorContains(t, err, test.errorPattern)
 		})
 	}
 }
