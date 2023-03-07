@@ -8,11 +8,19 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# prevent concurrent workflow runs
+# - for pull requests, we only want to build the latest commit
+# - for master and tags, we need to run all builds, since containers must be pushed
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   IMAGE_NAME: csang/conch
 
 jobs:
   docker:
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
       -
