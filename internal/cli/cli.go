@@ -50,11 +50,13 @@ func (f *Filters) Any() bool {
 }
 
 type Outputs struct {
-	List   bool
-	Format string
-	Count  bool
+	List        bool
+	Format      string
+	Count       bool
+	Impact      bool
+	BumpVersion string
 }
 
 func (o *Outputs) Any() bool {
-	return o.List || o.Format != "" || o.Count
+	return o.List || o.Format != "" || o.Count || o.Impact || o.BumpVersion != ""
 }

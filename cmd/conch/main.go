@@ -11,6 +11,7 @@ import (
 	"github.com/csdev/conch/internal/cli"
 	"github.com/csdev/conch/internal/commit"
 	"github.com/csdev/conch/internal/config"
+	"github.com/csdev/conch/internal/semver"
 	"github.com/csdev/conch/internal/util"
 	flag "github.com/spf13/pflag"
 )
@@ -72,6 +73,10 @@ func main() {
 		"format matching commits using a Go template")
 	flag.BoolVarP(&outputs.Count, "count", "n", outputs.Count,
 		"show the number of matching commits")
+	flag.BoolVarP(&outputs.Impact, "impact", "i", outputs.Impact,
+		"determine the max impact of the changes in the range (breaking/minor/patch/uncategorized)")
+	flag.StringVarP(&outputs.BumpVersion, "bump-version", "b", outputs.BumpVersion,
+		"bump up the specified version number based on the changes in the range")
 
 	flag.CommandLine.SortFlags = false
 
@@ -113,6 +118,15 @@ func main() {
 	if flag.NArg() != 1 {
 		flag.Usage()
 		log.Fatalln("error: please specify a revision range")
+	}
+
+	var sv *semver.Semver
+	if outputs.BumpVersion != "" {
+		var err error
+		sv, err = semver.Parse(outputs.BumpVersion)
+		if err != nil {
+			log.Fatalf("error: %v", err)
+		}
 	}
 
 	if repoPath == "" {
@@ -167,9 +181,14 @@ func main() {
 	}
 
 	var numCommits int
+	impact := commit.Uncategorized
 	selectAll := !filters.Selections.Any()
 
-	if filters.Any() || outputs.Any() {
+	if filters.Any() && !outputs.Any() {
+		outputs.List = true
+	}
+
+	if outputs.Any() {
 		for _, c := range commits {
 			if filters.Types != nil && !filters.Types.Contains(c.Type) {
 				continue
@@ -203,15 +222,34 @@ func main() {
 				if err != nil {
 					log.Printf("%v", err)
 				}
-			} else if !outputs.Count {
+			} else if outputs.List {
 				fmt.Printf("%s: %s\n", c.Id[:7], c.Summary())
 			}
 			numCommits += 1
+
+			if cls < impact {
+				impact = cls
+			}
 		}
 	}
 
 	if outputs.Count {
 		fmt.Printf("%d\n", numCommits)
+	} else if outputs.Impact {
+		fmt.Printf("%s\n", []string{"breaking", "major", "minor", "uncategorized"}[impact])
+	} else if sv != nil {
+		var nextVer *semver.Semver
+		switch impact {
+		case commit.Breaking:
+			nextVer = sv.NextMajor()
+		case commit.Minor:
+			nextVer = sv.NextMinor()
+		case commit.Patch:
+			nextVer = sv.NextPatch()
+		default:
+			nextVer = sv.NextRelease()
+		}
+		fmt.Printf("%s\n", nextVer.String())
 	}
 
 	if parseErr != nil || policyErr != nil {
