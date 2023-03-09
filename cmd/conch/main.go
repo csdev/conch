@@ -74,7 +74,7 @@ func main() {
 	flag.BoolVarP(&outputs.Count, "count", "n", outputs.Count,
 		"show the number of matching commits")
 	flag.BoolVarP(&outputs.Impact, "impact", "i", outputs.Impact,
-		"determine the max impact of the changes in the range (breaking/minor/patch/uncategorized)")
+		"show the max impact of the commits (breaking/minor/patch/uncategorized)")
 	flag.StringVarP(&outputs.BumpVersion, "bump-version", "b", outputs.BumpVersion,
 		"bump up the specified version number based on the changes in the range")
 
@@ -236,7 +236,7 @@ func main() {
 	if outputs.Count {
 		fmt.Printf("%d\n", numCommits)
 	} else if outputs.Impact {
-		fmt.Printf("%s\n", []string{"breaking", "major", "minor", "uncategorized"}[impact])
+		fmt.Printf("%s\n", []string{"breaking", "minor", "patch", "uncategorized"}[impact])
 	} else if sv != nil {
 		var nextVer *semver.Semver
 		switch impact {
