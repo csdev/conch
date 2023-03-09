@@ -3,7 +3,7 @@
 ## Features
 
 Conch verifies that your Git commit messages adhere to the
-[Conventional Commits](https://www.conventionalcommits.org/) specification.
+[Conventional Commits] specification.
 That is, all commit messages must use the following format:
 
 ```
@@ -211,7 +211,7 @@ For example, `conch -b '1.0.0' 'HEAD~5'` returns `2.0.0` if at least one of
 the previous five commits contains a breaking change. It returns `1.1.0` if
 there is a `fix` or other minor commit in the range, and no breaking changes.
 
-The starting version number must be a [semantic version](https://semver.org/):
+The starting version number must be a [semantic version][semver]:
 
 ```
 major.minor.patch[-prerelease_info][+build_metadata]
@@ -372,3 +372,12 @@ Conch is statically-linked against the following third-party libraries:
 * libssh2 ([BSD-3](https://github.com/libssh2/libssh2/blob/master/COPYING))
 * libssl (openssl) ([Apache 2.0](https://github.com/openssl/openssl/blob/master/LICENSE.txt))
 * zlib ([License](https://github.com/madler/zlib/blob/master/LICENSE))
+
+It references the following standards:
+
+* [Conventional Commits] ([CC-BY-3.0])
+* [Semantic Versioning][semver] ([CC-BY-3.0])
+
+[Conventional Commits]: https://www.conventionalcommits.org/
+[semver]: https://semver.org/
+[CC-BY-3.0]: https://creativecommons.org/licenses/by/3.0/
