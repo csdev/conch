@@ -88,6 +88,8 @@ Usage: conch [options] <revision_range>
   -l, --list                             list matching commits
   -f, --format string                    format matching commits using a Go template
   -n, --count                            show the number of matching commits
+  -i, --impact                           show the max impact of the commits (breaking/minor/patch/uncategorized)
+  -b, --bump-version string              bump up the specified version number based on the changes in the range
 ```
 
 ### Revision Range
@@ -184,6 +186,45 @@ conch -n 'HEAD~5..'
 ```
 5
 ```
+
+#### Determine Impact of Changes (`-i`, `--impact`)
+
+Given the commits in the range, show the highest impact of the changes
+based on the commit types and any breaking change designations:
+
+* `breaking`
+* `minor`
+* `patch`
+* `uncategorized`
+
+For example, `conch -i 'HEAD~5'` returns `breaking` if at least one of
+the previous five commits contains a breaking change. It returns `minor`
+if there is at least one `fix`, and no breaking changes.
+
+#### Bump Up the Version Number (`-b`, `--bump-version`)
+
+Given the specified version number, output the next version number
+in the sequence based on the impact of the commits in the range.
+Use this function to help automate tagged releases of your project.
+
+For example, `conch -b '1.0.0' 'HEAD~5'` returns `2.0.0` if at least one of
+the previous five commits contains a breaking change. It returns `1.1.0` if
+there is a `fix` or other minor commit in the range, and no breaking changes.
+
+The starting version number must be a [semantic version](https://semver.org/):
+
+```
+major.minor.patch[-prerelease_info][+build_metadata]
+```
+
+```
+1.2.3
+1.2.3-alpha.1+build.92690d
+```
+
+Note: Prerelease info and build metadata is always stripped from the output.
+Major version zero (often used during initial development) is not treated
+specially.
 
 ### Filter Options
 
