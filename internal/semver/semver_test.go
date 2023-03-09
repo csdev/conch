@@ -6,6 +6,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMustUint(t *testing.T) {
+	tests := []struct {
+		str string
+		val uint
+	}{
+		{"0", 0},
+		{"1234", 1234},
+	}
+
+	for _, test := range tests {
+		t.Run(test.str, func(t *testing.T) {
+			assert.Equal(t, test.val, mustUint(test.str))
+		})
+	}
+
+	tests2 := []struct {
+		str string
+	}{
+		{"-1"},
+		{"asdf"},
+		{"1234a"},
+	}
+
+	for _, test := range tests2 {
+		t.Run(test.str, func(t *testing.T) {
+			assert.Panics(t, func() { mustUint(test.str) })
+		})
+	}
+}
+
 func TestParse(t *testing.T) {
 	tests := []struct {
 		str string
@@ -182,6 +212,119 @@ func TestCompare(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 			assert.Equal(t, -1, test.a.Compare(test.b))
 			assert.Equal(t, 1, test.b.Compare(test.a))
+		})
+	}
+}
+
+func TestNextMajor(t *testing.T) {
+	tests := []struct {
+		current *Semver
+		next    *Semver
+	}{
+		{&Semver{Major: 1}, &Semver{Major: 2}},
+		{&Semver{Minor: 1}, &Semver{Major: 1}},
+		{&Semver{Patch: 1}, &Semver{Major: 1}},
+		{&Semver{Prerelease: []string{"alpha", "0"}}, &Semver{Major: 1}},
+		{&Semver{Build: []string{"beta", "1"}}, &Semver{Major: 1}},
+
+		{&Semver{Major: 1, Minor: 2, Patch: 3, Prerelease: []string{"pre"}, Build: []string{"build"}},
+			&Semver{Major: 2}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.current.String(), func(t *testing.T) {
+			assert.Equal(t, test.next, test.current.NextMajor())
+		})
+	}
+}
+
+func TestNextMinor(t *testing.T) {
+	tests := []struct {
+		current *Semver
+		next    *Semver
+	}{
+		{&Semver{Major: 1}, &Semver{Major: 1, Minor: 1}},
+		{&Semver{Minor: 1}, &Semver{Minor: 2}},
+		{&Semver{Patch: 1}, &Semver{Minor: 1}},
+		{&Semver{Prerelease: []string{"alpha", "0"}}, &Semver{Minor: 1}},
+		{&Semver{Build: []string{"beta", "1"}}, &Semver{Minor: 1}},
+
+		{&Semver{Major: 1, Minor: 2, Patch: 3, Prerelease: []string{"pre"}, Build: []string{"build"}},
+			&Semver{Major: 1, Minor: 3}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.current.String(), func(t *testing.T) {
+			assert.Equal(t, test.next, test.current.NextMinor())
+		})
+	}
+}
+
+func TestNextPatch(t *testing.T) {
+	tests := []struct {
+		current *Semver
+		next    *Semver
+	}{
+		{&Semver{Major: 1}, &Semver{Major: 1, Patch: 1}},
+		{&Semver{Minor: 1}, &Semver{Minor: 1, Patch: 1}},
+		{&Semver{Patch: 1}, &Semver{Patch: 2}},
+		{&Semver{Prerelease: []string{"alpha", "0"}}, &Semver{Patch: 1}},
+		{&Semver{Build: []string{"beta", "1"}}, &Semver{Patch: 1}},
+
+		{&Semver{Major: 1, Minor: 2, Patch: 3, Prerelease: []string{"pre"}, Build: []string{"build"}},
+			&Semver{Major: 1, Minor: 2, Patch: 4}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.current.String(), func(t *testing.T) {
+			assert.Equal(t, test.next, test.current.NextPatch())
+		})
+	}
+}
+
+func TestNextRelease(t *testing.T) {
+	tests := []struct {
+		current *Semver
+		next    *Semver
+	}{
+		{&Semver{Major: 1}, &Semver{Major: 1}},
+		{&Semver{Minor: 1}, &Semver{Minor: 1}},
+		{&Semver{Patch: 1}, &Semver{Patch: 1}},
+		{&Semver{Prerelease: []string{"alpha", "0"}}, &Semver{}},
+		{&Semver{Build: []string{"beta", "1"}}, &Semver{}},
+
+		{&Semver{Major: 1, Minor: 2, Patch: 3, Prerelease: []string{"pre"}, Build: []string{"build"}},
+			&Semver{Major: 1, Minor: 2, Patch: 3}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.current.String(), func(t *testing.T) {
+			assert.Equal(t, test.next, test.current.NextRelease())
+		})
+	}
+}
+
+func TestIsStable(t *testing.T) {
+	tests := []struct {
+		ver      *Semver
+		expected bool
+	}{
+		{&Semver{}, false},
+		{&Semver{Patch: 1}, false},
+		{&Semver{Minor: 1}, false},
+
+		{&Semver{Major: 1}, true},
+		{&Semver{Major: 1, Patch: 1}, true},
+		{&Semver{Major: 1, Minor: 1}, true},
+
+		{&Semver{Major: 1, Prerelease: []string{"alpha"}}, false},
+
+		{&Semver{Major: 1, Build: []string{"build"}}, true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.ver.String(), func(t *testing.T) {
+			assert.Equal(t, test.expected, test.ver.IsStable())
 		})
 	}
 }
