@@ -1,3 +1,7 @@
+// Package semver implements the [Semantic Versioning] standard.
+// It provides utilities for parsing, comparing, and incrementing version numbers.
+//
+// [Semantic Versioning]: https://semver.org/
 package semver
 
 import (
@@ -10,13 +14,19 @@ import (
 )
 
 type Semver struct {
-	Major      uint
-	Minor      uint
-	Patch      uint
+	Major uint
+	Minor uint
+	Patch uint
+
+	// One or more prerelease identifiers. Nil if this is a normal release.
 	Prerelease []string
-	Build      []string
+
+	// One or more build metadata identifiers. Nil if not provided.
+	// Most operations, including comparison, will ignore this field.
+	Build []string
 }
 
+// ErrSemver indicates a malformed version string.
 var ErrSemver = errors.New("invalid semantic version specifier")
 
 // https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
@@ -39,6 +49,8 @@ func mustUint(s string) uint {
 	return uint(val)
 }
 
+// Parse converts a string to a Semver object.
+// If the string is not a valid version specifier, it returns [ErrSemver].
 func Parse(s string) (*Semver, error) {
 	match := semverPattern.FindStringSubmatch(s)
 	if match == nil {
@@ -64,6 +76,10 @@ func Parse(s string) (*Semver, error) {
 	return v, nil
 }
 
+// String returns the textual representation of the version object,
+// in the format:
+//
+//	Major.Minor.Patch[-Prerelease][+Build]
 func (v *Semver) String() string {
 	s := strings.Builder{}
 	s.WriteString(fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch))
@@ -98,6 +114,12 @@ func compareIdent(a, b string) int {
 	return strings.Compare(a, b)
 }
 
+// Compare checks if two version specifiers are different. It returns:
+//   - -1 if the first version specifier has lower precedence
+//   - 0 if the version specifiers are equal
+//   - 1 if the first version specifier has higher precedence
+//
+// Build metadata is ignored.
 func (v *Semver) Compare(other *Semver) int {
 	if v.Major < other.Major {
 		return -1
@@ -151,12 +173,16 @@ func (v *Semver) Compare(other *Semver) int {
 	return 0
 }
 
+// NextMajor returns a new Semver object representing the next major version
+// in the sequence.
 func (v *Semver) NextMajor() *Semver {
 	return &Semver{
 		Major: v.Major + 1,
 	}
 }
 
+// NextMinor returns a new Semver object representing the next minor version
+// in the sequence.
 func (v *Semver) NextMinor() *Semver {
 	return &Semver{
 		Major: v.Major,
@@ -164,6 +190,8 @@ func (v *Semver) NextMinor() *Semver {
 	}
 }
 
+// NextPatch returns a new Semver object representing the next patch version
+// in the sequence.
 func (v *Semver) NextPatch() *Semver {
 	return &Semver{
 		Major: v.Major,
@@ -172,6 +200,9 @@ func (v *Semver) NextPatch() *Semver {
 	}
 }
 
+// NextRelease returns a new Semver object with prerelease and build
+// information stripped. (It is used to determine the next stable release
+// on a prerelease branch.)
 func (v *Semver) NextRelease() *Semver {
 	return &Semver{
 		Major: v.Major,
@@ -180,6 +211,8 @@ func (v *Semver) NextRelease() *Semver {
 	}
 }
 
+// IsStable returns true if the version is not a prerelease, and the major
+// version number is not 0. (Major version 0 is used for initial development).
 func (v *Semver) IsStable() bool {
 	return v.Major > 0 && len(v.Prerelease) == 0
 }
