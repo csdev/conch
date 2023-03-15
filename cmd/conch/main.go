@@ -109,7 +109,7 @@ func main() {
 		return
 	}
 
-	if err := enforceExclusiveFlags("output flags", "list", "format", "count"); err != nil {
+	if err := enforceExclusiveFlags("output flags", "list", "format", "count", "impact", "bump-version"); err != nil {
 		flag.Usage()
 		log.Fatalf("error: %v\n", err)
 	}
