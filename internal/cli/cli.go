@@ -1,9 +1,14 @@
+// Package cli defines the command-line features of conch.
 package cli
 
 import (
+	"strings"
+	"text/template"
+
 	"github.com/csdev/conch/internal/util"
 )
 
+// Selections are the different ways commits can be included based on impact.
 type Selections struct {
 	Breaking      bool
 	Minor         bool
@@ -15,6 +20,8 @@ func (s *Selections) Any() bool {
 	return s.Breaking || s.Minor || s.Patch || s.Uncategorized
 }
 
+// Filters are the different ways commits can be included based on their
+// attributes or impact.
 type Filters struct {
 	Types  util.CaseInsensitiveSet
 	Scopes util.CaseInsensitiveSet
@@ -25,6 +32,8 @@ func (f *Filters) Any() bool {
 	return f.Types != nil || f.Scopes != nil || f.Selections.Any()
 }
 
+// Outputs are the different ways that commit information can be displayed
+// to the user on the command line.
 type Outputs struct {
 	List        bool
 	Format      string
@@ -35,4 +44,11 @@ type Outputs struct {
 
 func (o *Outputs) Any() bool {
 	return o.List || o.Format != "" || o.Count || o.Impact || o.BumpVersion != ""
+}
+
+// Template creates a new text template with the specified name and contents,
+// suitable for formatting CLI output.
+func Template(name string, contents string) (*template.Template, error) {
+	c := strings.NewReplacer(`\\`, `\`, `\t`, "\t", `\n`, "\n").Replace(contents)
+	return template.New(name).Parse(c)
 }

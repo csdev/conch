@@ -12,7 +12,6 @@ import (
 	"github.com/csdev/conch/internal/commit"
 	"github.com/csdev/conch/internal/config"
 	"github.com/csdev/conch/internal/semver"
-	"github.com/csdev/conch/internal/util"
 	flag "github.com/spf13/pflag"
 )
 
@@ -142,7 +141,7 @@ func main() {
 	var tpl *template.Template
 	if outputs.Format != "" {
 		var err error
-		tpl, err = util.OutputTemplate("commit", outputs.Format)
+		tpl, err = cli.Template("commit", outputs.Format)
 		if err != nil {
 			log.Fatalf("invalid template: %v", err)
 		}

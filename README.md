@@ -175,7 +175,11 @@ which accepts the following variables:
 .Footers      # The footers, as a list of {Token, Value} pairs (may be empty)
 ```
 
-Additionally, you may use `\t` and `\n` to insert tabs and newlines.
+You may also use the following escape sequences:
+
+* `\t` - tab
+* `\n` - newline
+* `\\` - literal backslash
 
 #### Count Commits (`-n`, `--count`)
 
