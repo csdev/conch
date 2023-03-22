@@ -195,29 +195,29 @@ func isExcluded(msg string, cfg *config.Config) bool {
 	return false
 }
 
-func ParseRange(repoPath string, rangeSpec string, cfg *config.Config) ([]*Commit, error) {
-	commits := make([]*Commit, 0, 10)
-
+// IterRange parses all of the commit messages in the range. For each commit,
+// it invokes the callback function with the parsed Commit object, or an
+// error if the commit did not obey the Conventional Commits standard.
+// The callback function can abort the iteration by returning false.
+func IterRange(repoPath string, rangeSpec string, cfg *config.Config, f func(*Commit, error) bool) error {
 	repo, err := git.OpenRepository(repoPath)
 	if err != nil {
-		return commits, err
+		return err
 	}
 	defer repo.Free()
 
 	revwalk, err := repo.Walk()
 	if err != nil {
-		return commits, err
+		return err
 	}
 
 	gitErr := revwalk.PushRange(rangeSpec)
 	if gitErr != nil {
-		return commits, gitErr
+		return gitErr
 	}
 	defer revwalk.Free()
 
-	parseErr := NewParseError()
-
-	gitErr = revwalk.Iterate(func(gitCommit *git.Commit) bool {
+	return revwalk.Iterate(func(gitCommit *git.Commit) bool {
 		msg := gitCommit.Message()
 		if isExcluded(msg, cfg) {
 			return true // continues iteration, skipping over commit parsing
@@ -226,21 +226,33 @@ func ParseRange(repoPath string, rangeSpec string, cfg *config.Config) ([]*Commi
 		id := gitCommit.AsObject().Id().String() // the full commit hash from the git oid
 		c := NewCommit(id)
 		e := c.setMessage(msg)
-		if e == nil {
-			commits = append(commits, c)
-		} else {
-			parseErr.Append(e)
-		}
-
-		return true // continues iteration
+		return f(c, e)
 	})
-	if gitErr != nil {
-		return commits, gitErr
+}
+
+// ParseRange parses all of the commit messages in the range and returns
+// a slice of the resulting Commit objects. If an error occurs, the slice
+// may contain a partial set of all the commits that were successfully
+// processed so far.
+func ParseRange(repoPath string, rangeSpec string, cfg *config.Config) ([]*Commit, error) {
+	commits := make([]*Commit, 0, 10)
+	parseErr := NewParseError()
+
+	err := IterRange(repoPath, rangeSpec, cfg, func(c *Commit, err error) bool {
+		if err != nil {
+			parseErr.Append(err)
+		} else {
+			commits = append(commits, c)
+		}
+		return true
+	})
+
+	if err != nil {
+		return commits, err
 	}
 	if parseErr.HasErrors() {
 		return commits, parseErr
 	}
-
 	return commits, nil
 }
 
