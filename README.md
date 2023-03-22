@@ -75,6 +75,7 @@ _coming soon_
 ```
 Usage: conch [options] <revision_range>
   -h, --help                             display this help text
+  -q, --quiet                            suppress error messages for bad commits
   -v, --verbose                          verbose log output
   -V, --version                          display version and build info
   -c, --config string                    path to config file

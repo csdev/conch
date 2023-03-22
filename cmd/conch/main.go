@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"runtime/debug"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/csdev/conch/internal/commit"
 	"github.com/csdev/conch/internal/config"
 	"github.com/csdev/conch/internal/semver"
+	log "github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 )
 
@@ -30,9 +30,17 @@ func enforceExclusiveFlags(groupName string, flagNames ...string) error {
 	return nil
 }
 
+func init() {
+	log.SetFormatter(&log.TextFormatter{
+		DisableLevelTruncation: true,
+		DisableTimestamp:       true,
+	})
+}
+
 func main() {
 	var (
 		help    bool
+		quiet   bool
 		verbose bool
 		version bool
 
@@ -45,6 +53,7 @@ func main() {
 
 	// meta
 	flag.BoolVarP(&help, "help", "h", help, "display this help text")
+	flag.BoolVarP(&quiet, "quiet", "q", quiet, "suppress error messages for bad commits")
 	flag.BoolVarP(&verbose, "verbose", "v", verbose, "verbose log output")
 	flag.BoolVarP(&version, "version", "V", version, "display version and build info")
 
@@ -76,6 +85,20 @@ func main() {
 		"show the max impact of the commits (breaking/minor/patch/uncategorized)")
 	flag.StringVarP(&outputs.BumpVersion, "bump-version", "b", outputs.BumpVersion,
 		"bump up the specified version number based on the changes in the range")
+
+	flagGroups := map[string][]string{
+		"log options": {
+			"quiet",
+			"verbose",
+		},
+		"output flags": {
+			"list",
+			"format",
+			"count",
+			"impact",
+			"bump-version",
+		},
+	}
 
 	flag.CommandLine.SortFlags = false
 
@@ -109,14 +132,22 @@ func main() {
 		return
 	}
 
-	if err := enforceExclusiveFlags("output flags", "list", "format", "count", "impact", "bump-version"); err != nil {
-		flag.Usage()
-		log.Fatalf("error: %v\n", err)
+	for groupName, flagNames := range flagGroups {
+		if err := enforceExclusiveFlags(groupName, flagNames...); err != nil {
+			flag.Usage()
+			log.Fatalf("%v", err)
+		}
 	}
 
 	if flag.NArg() != 1 {
 		flag.Usage()
-		log.Fatalln("error: please specify a revision range")
+		log.Fatalln("please specify a revision range")
+	}
+
+	if quiet {
+		log.SetLevel(log.FatalLevel)
+	} else if verbose {
+		log.SetLevel(log.DebugLevel)
 	}
 
 	var sv *semver.Semver
@@ -124,7 +155,7 @@ func main() {
 		var err error
 		sv, err = semver.Parse(outputs.BumpVersion)
 		if err != nil {
-			log.Fatalf("error: %v", err)
+			log.Fatalf("%v", err)
 		}
 	}
 
@@ -150,24 +181,24 @@ func main() {
 	if configPath == "" {
 		p, err := config.Discover(repoPath)
 		if err != nil {
-			log.Fatalf("config error: %v", err)
+			log.Fatalf("config: %v", err)
 		}
 		configPath = p
 	}
 	cfg, err := config.Open(configPath)
 	if err != nil {
-		log.Fatalf("config error: %v", err)
+		log.Fatalf("config: %v", err)
 	}
 
 	commits, parseErr := commit.ParseRange(repoPath, flag.Arg(0), cfg)
 	if parseErr != nil {
-		log.Printf("%v", parseErr)
+		log.Errorf("%v", parseErr)
 		// don't exit yet -- try outputting any valid commits that were found
 	}
 
 	policyErr := commit.ApplyPolicy(commits, cfg)
 	if policyErr != nil {
-		log.Printf("%v", policyErr)
+		log.Errorf("%v", policyErr)
 		// don't exit yet -- try outputting any valid commits that were found
 	}
 
@@ -211,7 +242,7 @@ func main() {
 			if tpl != nil {
 				err := tpl.Execute(os.Stdout, c)
 				if err != nil {
-					log.Printf("%v", err)
+					log.Errorf("%v", err)
 				}
 			} else if outputs.List {
 				fmt.Printf("%s: %s\n", c.Id[:7], c.Summary())
@@ -244,6 +275,10 @@ func main() {
 	}
 
 	if parseErr != nil || policyErr != nil {
-		log.Fatalln("failed to parse some commits")
+		if quiet {
+			os.Exit(1)
+		} else {
+			log.Fatalln("failed to parse some commits")
+		}
 	}
 }
