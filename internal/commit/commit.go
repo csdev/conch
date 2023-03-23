@@ -10,11 +10,13 @@ import (
 	"github.com/csdev/conch/internal/config"
 	"github.com/csdev/conch/internal/util"
 	git "github.com/libgit2/git2go/v34"
+	log "github.com/sirupsen/logrus"
 )
 
 // Commit represents a single conventional commit.
 type Commit struct {
 	Id          string
+	ShortId     string
 	Type        string
 	Scope       string
 	IsExclaimed bool
@@ -90,13 +92,16 @@ var firstLinePattern = regexp.MustCompile(`^` +
 	`$`)
 
 func NewCommit(id string) *Commit {
-	return &Commit{Id: id}
+	return &Commit{
+		Id:      id,
+		ShortId: id,
+	}
 }
 
 func (c *Commit) setFirstLine(s string) error {
 	match := firstLinePattern.FindStringSubmatch(s)
 	if match == nil {
-		return ErrSummary(c.Id)
+		return ErrSummary(c.ShortId)
 	}
 
 	c.Type = match[firstLinePattern.SubexpIndex("type")]
@@ -115,7 +120,7 @@ func (c *Commit) setMessage(msg string) error {
 	scanner := bufio.NewScanner(strings.NewReader(msg))
 
 	if ok := scanner.Scan(); !ok {
-		return ErrEmpty(c.Id)
+		return ErrEmpty(c.ShortId)
 	}
 	err := c.setFirstLine(scanner.Text())
 	if err != nil {
@@ -127,7 +132,7 @@ func (c *Commit) setMessage(msg string) error {
 	}
 
 	if scanner.Text() != "" {
-		return ErrBlankLine(c.Id)
+		return ErrBlankLine(c.ShortId)
 	}
 
 	// The body of the commit message may consist of multiple paragraphs,
@@ -171,7 +176,7 @@ func (c *Commit) setMessage(msg string) error {
 	for _, footer := range c.Footers {
 		isBreaking, err := footer.IsBreakingChange()
 		if err != nil {
-			return ErrSyntax(c.Id, err.Error())
+			return ErrSyntax(c.ShortId, err.Error())
 		}
 		if isBreaking {
 			c.IsBreaking = true
@@ -223,8 +228,16 @@ func IterRange(repoPath string, rangeSpec string, cfg *config.Config, f func(*Co
 			return true // continues iteration, skipping over commit parsing
 		}
 
-		id := gitCommit.AsObject().Id().String() // the full commit hash from the git oid
+		obj := gitCommit.AsObject()
+		id := obj.Id().String() // the full commit hash from the git oid
 		c := NewCommit(id)
+
+		sid, err := obj.ShortId()
+		if err != nil {
+			log.Panicf("broken git repo? failed to get short id of commit %s: %v", id, err)
+		}
+		c.ShortId = sid
+
 		e := c.setMessage(msg)
 		return f(c, e)
 	})
@@ -261,16 +274,16 @@ func ParseRange(repoPath string, rangeSpec string, cfg *config.Config) ([]*Commi
 func (c *Commit) ApplyPolicy(cfg *config.Config) error {
 	policy := &cfg.Policy
 	if policy.Type.Types != nil && !policy.Type.Types.Contains(c.Type) {
-		return ErrUnrecognizedType(c.Id)
+		return ErrUnrecognizedType(c.ShortId)
 	}
 
 	if c.Scope == "" {
 		if policy.Scope.Required {
-			return ErrRequiredScope(c.Id)
+			return ErrRequiredScope(c.ShortId)
 		}
 	} else {
 		if policy.Scope.Scopes != nil && !policy.Scope.Scopes.Contains(c.Scope) {
-			return ErrUnrecognizedScope(c.Id)
+			return ErrUnrecognizedScope(c.ShortId)
 		}
 	}
 
@@ -278,7 +291,7 @@ func (c *Commit) ApplyPolicy(cfg *config.Config) error {
 	min := policy.Description.MinLength
 	max := policy.Description.MaxLength
 	if (descLen < min) || (max > 0 && descLen > max) {
-		return ErrDescriptionLength(c.Id, min, max)
+		return ErrDescriptionLength(c.ShortId, min, max)
 	}
 
 	// CAUTION: Tokens in footers need not be unique.
@@ -291,13 +304,13 @@ func (c *Commit) ApplyPolicy(cfg *config.Config) error {
 
 	for _, f := range c.Footers {
 		if policy.Footer.Tokens != nil && !policy.Footer.Tokens.Contains(f.Token) {
-			return ErrUnrecognizedFooter(c.Id, f.Token)
+			return ErrUnrecognizedFooter(c.ShortId, f.Token)
 		}
 		reqTokens.Remove(f.Token)
 	}
 
 	if len(reqTokens) > 0 {
-		return ErrRequiredFooters(c.Id, reqTokens)
+		return ErrRequiredFooters(c.ShortId, reqTokens)
 	}
 
 	return nil

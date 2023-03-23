@@ -24,6 +24,7 @@ func TestSetFirstLine(t *testing.T) {
 			message:     "feat: implement the thing",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 			},
@@ -34,6 +35,7 @@ func TestSetFirstLine(t *testing.T) {
 			message:     "feat(things): implement the thing",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Scope:       "things",
 				Description: "implement the thing",
@@ -45,6 +47,7 @@ func TestSetFirstLine(t *testing.T) {
 			message:     "feat!: implement the thing",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				IsExclaimed: true,
 				Description: "implement the thing",
@@ -57,6 +60,7 @@ func TestSetFirstLine(t *testing.T) {
 			message:     "feat(things)!: implement the thing",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Scope:       "things",
 				IsExclaimed: true,
@@ -70,6 +74,7 @@ func TestSetFirstLine(t *testing.T) {
 			message:     "Feat(Things): Implement the THING",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "Feat",
 				Scope:       "Things",
 				Description: "Implement the THING",
@@ -81,6 +86,7 @@ func TestSetFirstLine(t *testing.T) {
 			message:     "feat.minor(the:things!)!: implement the thing!",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat.minor",
 				Scope:       "the:things!",
 				IsExclaimed: true,
@@ -94,6 +100,7 @@ func TestSetFirstLine(t *testing.T) {
 			message:     "feat(app widgets): implement the thing",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Scope:       "app widgets",
 				Description: "implement the thing",
@@ -105,6 +112,7 @@ func TestSetFirstLine(t *testing.T) {
 			message:     "typé(scopé): déscription",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "typé",
 				Scope:       "scopé",
 				Description: "déscription",
@@ -113,49 +121,49 @@ func TestSetFirstLine(t *testing.T) {
 		{
 			description: "it does not allow an empty line",
 			message:     "",
-			commit:      &Commit{Id: "0"},
+			commit:      &Commit{Id: "0", ShortId: "0"},
 			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow a missing type",
 			message:     "implement the thing",
-			commit:      &Commit{Id: "0"},
+			commit:      &Commit{Id: "0", ShortId: "0"},
 			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow an empty type",
 			message:     ": implement the thing",
-			commit:      &Commit{Id: "0"},
+			commit:      &Commit{Id: "0", ShortId: "0"},
 			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow whitespace in the type",
 			message:     "feat : implement the thing",
-			commit:      &Commit{Id: "0"},
+			commit:      &Commit{Id: "0", ShortId: "0"},
 			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow utf8 control whitespace in the type",
 			message:     "feat\t: implement the thing",
-			commit:      &Commit{Id: "0"},
+			commit:      &Commit{Id: "0", ShortId: "0"},
 			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow utf8 separator whitespace in the type",
 			message:     "feat\u2002: implement the thing",
-			commit:      &Commit{Id: "0"},
+			commit:      &Commit{Id: "0", ShortId: "0"},
 			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow utf8 bom/zwnbsp in the type",
 			message:     "feat\ufeff: implement the thing",
-			commit:      &Commit{Id: "0"},
+			commit:      &Commit{Id: "0", ShortId: "0"},
 			err:         ErrSummary("0"),
 		},
 		{
 			description: "it does not allow an empty description",
 			message:     "feat: ",
-			commit:      &Commit{Id: "0"},
+			commit:      &Commit{Id: "0", ShortId: "0"},
 			err:         ErrSummary("0"),
 		},
 	}
@@ -182,6 +190,7 @@ func TestSetMessage(t *testing.T) {
 			message:     "feat: implement the thing\n",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 			},
@@ -192,6 +201,7 @@ func TestSetMessage(t *testing.T) {
 			message:     "feat: implement the thing\n\n",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 			},
@@ -202,6 +212,7 @@ func TestSetMessage(t *testing.T) {
 			message:     "feat: implement the thing\n\ndescription line 1\ndescription line 2\n",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 				Body:        "description line 1\ndescription line 2",
@@ -213,6 +224,7 @@ func TestSetMessage(t *testing.T) {
 			message:     "feat: implement the thing\n\n1a\n1b\n\n2a\n2b\n",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 				Body:        "1a\n1b\n\n2a\n2b",
@@ -224,6 +236,7 @@ func TestSetMessage(t *testing.T) {
 			message:     "feat: implement the thing\n\nRefs: #1234\nSigned-off-by: John Doe <john.doe@example>\n",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 				Footers: []Footer{
@@ -237,6 +250,7 @@ func TestSetMessage(t *testing.T) {
 			message:     "feat: implement the thing\n\n1a\n1b\n\n2a\n2b\n\nRefs: #1234",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 				Body:        "1a\n1b\n\n2a\n2b",
@@ -251,6 +265,7 @@ func TestSetMessage(t *testing.T) {
 			message:     "feat: implement the thing\n\nRefs: 1234\n5678\n",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 				Footers: []Footer{
@@ -264,6 +279,7 @@ func TestSetMessage(t *testing.T) {
 			message:     "feat: implement the thing\n\nBREAKING CHANGE: the API is different",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 				Footers: []Footer{
@@ -276,13 +292,13 @@ func TestSetMessage(t *testing.T) {
 		{
 			description: "message cannot be empty",
 			message:     "",
-			commit:      &Commit{Id: "0"},
+			commit:      &Commit{Id: "0", ShortId: "0"},
 			err:         ErrEmpty("0"),
 		},
 		{
 			description: "first line must be correct",
 			message:     "asdf",
-			commit:      &Commit{Id: "0"},
+			commit:      &Commit{Id: "0", ShortId: "0"},
 			err:         ErrSummary("0"),
 		},
 		{
@@ -290,6 +306,7 @@ func TestSetMessage(t *testing.T) {
 			message:     "feat: implement the thing\nasdf\n",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 			},
@@ -300,6 +317,7 @@ func TestSetMessage(t *testing.T) {
 			message:     "feat: implement the thing\n\nbreaking-change: foo",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "feat",
 				Description: "implement the thing",
 				Footers: []Footer{
@@ -441,6 +459,7 @@ func TestParseRange(t *testing.T) {
 			expectedCommits: []*Commit{
 				{
 					Id:          oids[2].String(),
+					ShortId:     oids[2].String()[:7],
 					Type:        "chore",
 					Description: "the most recent commit",
 				},
@@ -463,7 +482,7 @@ func TestParseRange(t *testing.T) {
 			expectedCommits: []*Commit{},
 			expectedErr: &ParseError{
 				Errors: []string{
-					ErrSummary(oids[1].String()).Error(),
+					ErrSummary(oids[1].String()[:7]).Error(),
 				},
 			},
 		},
@@ -521,6 +540,7 @@ func TestParseRange(t *testing.T) {
 func TestApplyPolicy(t *testing.T) {
 	commit := &Commit{
 		Id:          "0",
+		ShortId:     "0",
 		Type:        "chore",
 		Scope:       "deps",
 		Description: "upgrade stuff",
@@ -630,6 +650,7 @@ func TestApplyPolicy_RequiredFields(t *testing.T) {
 			description: "it checks for a missing scope",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "chore",
 				Description: "upgrade stuff",
 				Footers: []Footer{
@@ -643,6 +664,7 @@ func TestApplyPolicy_RequiredFields(t *testing.T) {
 			description: "it checks for missing footers",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "chore",
 				Scope:       "deps",
 				Description: "upgrade stuff",
@@ -656,6 +678,7 @@ func TestApplyPolicy_RequiredFields(t *testing.T) {
 			description: "it reports multiple missing footers",
 			commit: &Commit{
 				Id:          "0",
+				ShortId:     "0",
 				Type:        "chore",
 				Scope:       "deps",
 				Description: "upgrade stuff",
@@ -678,6 +701,7 @@ func TestApplyPolicySlice(t *testing.T) {
 	commits := []*Commit{
 		{
 			Id:          "0",
+			ShortId:     "0",
 			Type:        "chore",
 			Scope:       "deps",
 			Description: "upgrade stuff",
@@ -687,6 +711,7 @@ func TestApplyPolicySlice(t *testing.T) {
 		},
 		{
 			Id:          "1",
+			ShortId:     "1",
 			Type:        "ci",
 			Description: "add environment variables",
 			Footers: []Footer{

@@ -245,7 +245,7 @@ func main() {
 					log.Errorf("%v", err)
 				}
 			} else if outputs.List {
-				fmt.Printf("%s: %s\n", c.Id[:7], c.Summary())
+				fmt.Printf("%s: %s\n", c.ShortId, c.Summary())
 			}
 			numCommits += 1
 
