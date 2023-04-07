@@ -73,20 +73,31 @@ jobs:
           file: ./build/prod/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  release:
+    needs: docker
+    if: startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    steps:
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
       -
         name: Deploy standalone binaries
-        if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          for platform in linux/amd64 linux/arm64; do
-            tag="$(tr / - <<<"$platform")"
-            cid="$(docker create --platform="$platform" "$IMAGE_NAME":latest)"
-            docker cp "${cid}:/opt/go/bin/conch" "conch-${platform}"
-            docker rm "$cid"
-            gh release upload "$GITHUB_REF" "conch-${platform}"
-          done
+          tag="${GITHUB_REF#'refs/tags/v'}-$(tr / - <<<"${{ matrix.platform }}")"
+          cid="$(docker create --platform="${{ matrix.platform }}" "$IMAGE_NAME":"${GITHUB_REF#'refs/tags/v'}")"
+          docker cp "${cid}:/opt/go/bin/conch" "conch-${tag}"
+          docker rm "$cid"
+          gh release upload "$GITHUB_REF" "conch-${tag}"
         shell: bash
