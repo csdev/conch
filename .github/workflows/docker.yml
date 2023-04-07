@@ -100,6 +100,8 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
         name: Deploy standalone binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           tag="${GITHUB_REF#'refs/tags/v'}-$(tr / - <<<"${{ matrix.platform }}")"
           cid="$(docker create --platform="${{ matrix.platform }}" "$IMAGE_NAME":"${GITHUB_REF#'refs/tags/v'}")"
