@@ -83,6 +83,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # for releases api
+      metadata: read
+      packages: read
     strategy:
       matrix:
         platform:
