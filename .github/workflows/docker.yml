@@ -85,7 +85,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write  # for releases api
-      metadata: read
       packages: read
     strategy:
       matrix:
