@@ -160,12 +160,6 @@ func main() {
 	}
 
 	if repoPath == "" {
-		repoPath = os.Getenv("GITHUB_WORKSPACE")
-	}
-	if repoPath == "" {
-		repoPath = os.Getenv("CONCH_DOCKER_WORKSPACE")
-	}
-	if repoPath == "" {
 		repoPath = "."
 	}
 

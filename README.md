@@ -46,16 +46,11 @@ and architectures. (Please pin to a specific release branch instead of `latest`.
 docker pull csang/conch:0.1
 ```
 
-When running the container, bind mount your repository to `/mnt/workspace`:
+When running the container, bind mount your repository and set it as the container's
+working directory. (A read-only mount is sufficient.) For example:
 
 ```bash
-docker run --rm -v "/path/to/git/repository:/mnt/workspace" csang/conch:0.1 'HEAD~10..'
-```
-
-For a repository in the current working directory:
-
-```bash
-docker run --rm -v "$(pwd):/mnt/workspace" csang/conch:0.1 'HEAD~10..'
+docker run --rm -v "$(pwd):/mnt/workspace:ro" --workdir=/mnt/workspace csang/conch:0.1 'HEAD~10..'
 ```
 
 ### Github Actions
@@ -114,16 +109,10 @@ for more tips on how to specify a commit range.
 
 ### Git Repository Location
 
-Conch looks for your Git repository in the following locations:
-
-1. The path specified in the `--repo` flag.
-2. The `GITHUB_WORKSPACE` environment variable (for use with Github Actions).
-3. The bind-mounted directory `/mnt/workspace`, when running in Docker.
-4. The current working directory.
-
 In most cases, you should run `conch` from within your project's working directory,
 just as you would run other `git` commands. Use the `--repo` flag if you need to point
-`conch` at a different directory.
+`conch` at a different directory. For Docker, you can also set the working directory
+as part of the run command, `docker run --workdir`.
 
 ### Output Options
 
