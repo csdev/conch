@@ -2,6 +2,8 @@
 package cli
 
 import (
+	"io"
+	"os"
 	"strings"
 	"text/template"
 
@@ -51,4 +53,18 @@ func (o *Outputs) Any() bool {
 func Template(name string, contents string) (*template.Template, error) {
 	c := strings.NewReplacer(`\\`, `\`, `\t`, "\t", `\n`, "\n").Replace(contents)
 	return template.New(name).Parse(c)
+}
+
+func GetFileContents(filename string) (string, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }

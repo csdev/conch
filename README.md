@@ -16,7 +16,7 @@ That is, all commit messages must use the following format:
 
 Conventional Commits encourages developers to write better, more descriptive
 commit messages. It also enables commit messages to be machine-parseable.
-Use Conch as a pull request check to enforce these best practices.
+Use Conch as a Git hook or pull request check to enforce these best practices.
 
 Conch can also inspect your commits and filter them by Conventional Commit attributes
 like type and scope. Use Conch to prepare changelogs, summarize breaking changes,
@@ -53,11 +53,43 @@ working directory. (A read-only mount is sufficient.) For example:
 docker run --rm -v "$(pwd):/mnt/workspace:ro" --workdir=/mnt/workspace csang/conch:0.1 'HEAD~10..'
 ```
 
+### Git Hook
+
+Conch can be installed as a [`commit-msg`](https://git-scm.com/docs/githooks#_commit_msg) hook,
+so that it automatically validates your commit messages whenever you perform a `git commit`.
+
+We recommend using the [pre-commit framework](https://pre-commit.com) to manage your Git hooks.
+Add Conch as a repository-local hook to `.pre-commit-config.yaml`.
+
+If you have the standalone version available on your path:
+
+```yml
+repos:
+  - repo: local
+    hooks:
+      - id: conch-standalone
+        name: 'Conch: Conventional Commits (standalone version)'
+        language: system
+        entry: conch --hook
+        stages: [commit-msg]
+```
+
+Or, for the Docker version:
+
+```yml
+repos:
+  - repo: local
+    hooks:
+      - id: conch-docker
+        name: 'Conch: Conventional Commits (Docker version)'
+        language: docker_image
+        entry: csang/conch:0.1 --hook
+        stages: [commit-msg]
+```
+
+Then, install the hook by running `pre-commit install -t commit-msg`.
+
 ### Github Actions
-
-_coming soon_
-
-### Pre-Commit Hook
 
 _coming soon_
 

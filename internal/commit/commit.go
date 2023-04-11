@@ -269,6 +269,12 @@ func ParseRange(repoPath string, rangeSpec string, cfg *config.Config) ([]*Commi
 	return commits, nil
 }
 
+func ParseMessage(msg string, cfg *config.Config) (*Commit, error) {
+	c := NewCommit("0")
+	err := c.setMessage(msg)
+	return c, err
+}
+
 // ApplyPolicy checks if the commit is semantically valid
 // according to the supplied policy object.
 func (c *Commit) ApplyPolicy(cfg *config.Config) error {
@@ -375,4 +381,21 @@ func (c *Commit) Classification(cfg *config.Config) int {
 		return Patch
 	}
 	return Uncategorized
+}
+
+// StripComments removes all lines that start with "#" from the input,
+// and returns the resulting string.
+func StripComments(msg string) string {
+	scanner := bufio.NewScanner(strings.NewReader(msg))
+	var out strings.Builder
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, "#") {
+			out.WriteString(line)
+			out.WriteString("\n")
+		}
+	}
+
+	return out.String()
 }

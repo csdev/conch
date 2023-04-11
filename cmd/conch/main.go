@@ -47,6 +47,8 @@ func main() {
 		configPath string
 		repoPath   string
 
+		hook bool
+
 		filters cli.Filters
 		outputs cli.Outputs
 	)
@@ -60,6 +62,9 @@ func main() {
 	// configuration
 	flag.StringVarP(&configPath, "config", "c", configPath, "path to config file")
 	flag.StringVarP(&repoPath, "repo", "r", repoPath, "path to the git repository")
+
+	// git hook mode
+	flag.BoolVarP(&hook, "hook", "k", hook, "run as git commit-msg hook, validating a file (see docs)")
 
 	// output filtering
 	flag.VarP(&filters.Types, "types", "T", "filter commits by type")
@@ -111,7 +116,11 @@ func main() {
 		filters.Types = nil
 		filters.Scopes = nil
 
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] <revision_range>\n", os.Args[0])
+		const usage = "Usage: \n" +
+			"    %s [options] <revision_range>\n" +
+			"    %s [-k|--hook] <filename>\n"
+
+		fmt.Fprintf(os.Stderr, usage, os.Args[0], os.Args[0])
 		flag.PrintDefaults()
 	}
 
@@ -141,7 +150,11 @@ func main() {
 
 	if flag.NArg() != 1 {
 		flag.Usage()
-		log.Fatalln("please specify a revision range")
+		if hook {
+			log.Fatalln("commit-msg hook: please specify a filename")
+		} else {
+			log.Fatalln("please specify a revision range")
+		}
 	}
 
 	if quiet {
@@ -184,7 +197,26 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	commits, parseErr := commit.ParseRange(repoPath, flag.Arg(0), cfg)
+	var origMsg string
+	var commits []*commit.Commit
+	var parseErr error
+
+	if hook {
+		origMsg, parseErr = cli.GetFileContents(flag.Arg(0))
+		if parseErr != nil {
+			log.Fatalf("%v", parseErr)
+		}
+		origMsg = commit.StripComments(origMsg)
+
+		var c *commit.Commit
+		c, parseErr = commit.ParseMessage(origMsg, cfg)
+		if parseErr == nil {
+			commits = []*commit.Commit{c}
+		}
+	} else {
+		commits, parseErr = commit.ParseRange(repoPath, flag.Arg(0), cfg)
+	}
+
 	if parseErr != nil {
 		log.Errorf("%v", parseErr)
 		// don't exit yet -- try outputting any valid commits that were found
@@ -272,6 +304,9 @@ func main() {
 		if quiet {
 			os.Exit(1)
 		} else {
+			if origMsg != "" {
+				fmt.Fprintf(os.Stderr, "original commit message:\n%s\n", origMsg)
+			}
 			log.Fatalln("failed to parse some commits")
 		}
 	}
