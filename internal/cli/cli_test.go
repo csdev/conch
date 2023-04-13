@@ -64,6 +64,9 @@ func TestGetFileContents(t *testing.T) {
 	_, err = f.WriteString(fileContents)
 	require.NoError(t, err)
 
+	err = f.Close()
+	require.NoError(t, err)
+
 	tests := []struct {
 		description      string
 		filename         string
