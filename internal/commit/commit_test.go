@@ -853,3 +853,38 @@ func TestClassification(t *testing.T) {
 		})
 	}
 }
+
+func TestStripComments(t *testing.T) {
+	tests := []struct {
+		description string
+		msg         string
+		expected    string
+	}{
+		{
+			description: "it works on an empty commit message",
+			msg:         "",
+			expected:    "",
+		},
+		{
+			description: "it works on an empty line",
+			msg:         "\n",
+			expected:    "\n",
+		},
+		{
+			description: "it removes a comment",
+			msg:         "#comment\nsome text\n",
+			expected:    "some text\n",
+		},
+		{
+			description: "it ignores # in the middle of a line",
+			msg:         "some text # not a comment\n",
+			expected:    "some text # not a comment\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			assert.Equal(t, test.expected, StripComments(test.msg))
+		})
+	}
+}
