@@ -207,12 +207,7 @@ func main() {
 			log.Fatalf("%v", parseErr)
 		}
 		origMsg = commit.StripComments(origMsg)
-
-		var c *commit.Commit
-		c, parseErr = commit.ParseMessage(origMsg, cfg)
-		if parseErr == nil {
-			commits = []*commit.Commit{c}
-		}
+		commits, parseErr = commit.ParseMessage(origMsg, cfg)
 	} else {
 		commits, parseErr = commit.ParseRange(repoPath, flag.Arg(0), cfg)
 	}

@@ -269,10 +269,22 @@ func ParseRange(repoPath string, rangeSpec string, cfg *config.Config) ([]*Commi
 	return commits, nil
 }
 
-func ParseMessage(msg string, cfg *config.Config) (*Commit, error) {
+// ParseMessage parses a single commit message and returns a slice of the
+// resulting Commit objects. (It may return an empty slice if the commit
+// message was excluded.)
+func ParseMessage(msg string, cfg *config.Config) ([]*Commit, error) {
+	commits := make([]*Commit, 0, 1)
+	if isExcluded(msg, cfg) {
+		return commits, nil
+	}
+
 	c := NewCommit("0")
 	err := c.setMessage(msg)
-	return c, err
+	if err != nil {
+		return commits, err
+	}
+	commits = append(commits, c)
+	return commits, nil
 }
 
 // ApplyPolicy checks if the commit is semantically valid

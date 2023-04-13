@@ -537,6 +537,57 @@ func TestParseRange(t *testing.T) {
 	}
 }
 
+func TestParseMessage(t *testing.T) {
+	tests := []struct {
+		description     string
+		msg             string
+		cfg             *config.Config
+		expectedCommits []*Commit
+		expectedErr     error
+	}{
+		{
+			description: "it returns a valid commit",
+			msg:         "feat: a new thing",
+			cfg:         config.Default(),
+			expectedCommits: []*Commit{
+				{
+					Id:          "0",
+					ShortId:     "0",
+					Type:        "feat",
+					Description: "a new thing",
+				},
+			},
+			expectedErr: nil,
+		},
+		{
+			description: "it excludes a commit based on the config",
+			msg:         "revert the thing",
+			cfg: &config.Config{
+				Exclude: config.Exclude{
+					Prefixes: util.NewCaseInsensitiveSet([]string{"revert"}),
+				},
+			},
+			expectedCommits: []*Commit{},
+			expectedErr:     nil,
+		},
+		{
+			description:     "it returns an error for an invalid commit message",
+			msg:             "revert the thing",
+			cfg:             config.Default(),
+			expectedCommits: []*Commit{},
+			expectedErr:     ErrSummary("0"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			commits, err := ParseMessage(test.msg, test.cfg)
+			assert.Equal(t, test.expectedCommits, commits)
+			assert.Equal(t, test.expectedErr, err)
+		})
+	}
+}
+
 func TestApplyPolicy(t *testing.T) {
 	commit := &Commit{
 		Id:          "0",
