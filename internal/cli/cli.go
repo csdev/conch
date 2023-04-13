@@ -55,6 +55,7 @@ func Template(name string, contents string) (*template.Template, error) {
 	return template.New(name).Parse(c)
 }
 
+// GetFileContents reads the entire contents of a text file into a string.
 func GetFileContents(filename string) (string, error) {
 	f, err := os.Open(filename)
 	if err != nil {
