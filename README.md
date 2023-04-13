@@ -101,12 +101,14 @@ _coming soon_
 
 ```
 Usage: conch [options] <revision_range>
+       conch [-k|--hook] <filename>
   -h, --help                             display this help text
   -q, --quiet                            suppress error messages for bad commits
   -v, --verbose                          verbose log output
   -V, --version                          display version and build info
   -c, --config string                    path to config file
   -r, --repo string                      path to the git repository
+  -k, --hook                             run as git commit-msg hook, validating a file (see docs)
   -T, --types comma_separated_strings    filter commits by type
   -S, --scopes comma_separated_strings   filter commits by scope
   -B, --breaking                         show breaking changes (e.g., feat!)

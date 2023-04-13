@@ -116,9 +116,8 @@ func main() {
 		filters.Types = nil
 		filters.Scopes = nil
 
-		const usage = "Usage: \n" +
-			"    %s [options] <revision_range>\n" +
-			"    %s [-k|--hook] <filename>\n"
+		const usage = "Usage: %s [options] <revision_range>\n" +
+			"       %s [-k|--hook] <filename>\n"
 
 		fmt.Fprintf(os.Stderr, usage, os.Args[0], os.Args[0])
 		flag.PrintDefaults()
