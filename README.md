@@ -43,14 +43,14 @@ Conch is available on Docker Hub. See the repository page for supported image ta
 and architectures. (Please pin to a specific release branch instead of `latest`.)
 
 ```bash
-docker pull csang/conch:0.1
+docker pull csang/conch:0.2
 ```
 
 When running the container, bind mount your repository and set it as the container's
 working directory. (A read-only mount is sufficient.) For example:
 
 ```bash
-docker run --rm -v "$(pwd):/mnt/workspace:ro" --workdir=/mnt/workspace csang/conch:0.1 'HEAD~10..'
+docker run --rm -v "$(pwd):/mnt/workspace:ro" --workdir=/mnt/workspace csang/conch:0.2 'HEAD~10..'
 ```
 
 ### Git Hook
@@ -83,7 +83,7 @@ repos:
       - id: conch-docker
         name: 'Conch: Conventional Commits (Docker version)'
         language: docker_image
-        entry: csang/conch:0.1 --hook
+        entry: csang/conch:0.2 --hook
         stages: [commit-msg]
 ```
 
