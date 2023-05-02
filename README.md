@@ -26,21 +26,27 @@ and automate other CI workflows.
 
 ### Standalone Version
 
-Download Conch from the releases page, place it somewhere on your path
-(like `/usr/local/bin/`), and ensure the file is executable.
+Download Conch from the [releases page](https://github.com/csdev/conch/releases),
+place it somewhere on your path (like `/usr/local/bin/`), and ensure the file is executable.
 
 Then, run the program from within your Git repository.
 
 ```bash
+# Validate the ten most recent commits on the current branch
 conch 'HEAD~10..'
+
+# Validate all the commits on branch "dev"
+conch 'main..dev'
+
+# Validate a specific range of commit hashes
+conch '40b9741..2453f95'
 ```
 
 The `conch` binary is statically linked, so no dependencies are needed.
 
 ### Docker Version
 
-Conch is available on Docker Hub. See the repository page for supported image tags
-and architectures. (Please pin to a specific release branch instead of `latest`.)
+Conch is available on Docker Hub at [`csang/conch`](https://hub.docker.com/r/csang/conch):
 
 ```bash
 docker pull csang/conch:0.2
@@ -88,14 +94,6 @@ repos:
 ```
 
 Then, install the hook by running `pre-commit install -t commit-msg`.
-
-### Github Actions
-
-_coming soon_
-
-### Go Module
-
-_coming soon_
 
 ## Full Usage Instructions
 
@@ -192,11 +190,13 @@ which accepts the following variables:
 
 ```ini
 .Id           # The git commit hash
+.ShortId      # The abbreviated git commit hash
 .Type         # The commit type
 .Scope        # The commit scope (may be empty)
 .Description  # The commit description (may be empty)
 .Body         # The remainder of the commit message, excluding any footers (may be empty)
-.Footers      # The footers, as a list of {Token, Value} pairs (may be empty)
+.Footers      # The footers, as a list of {Token, Separator, Value} objects (may be empty)
+.IsBreaking   # Boolean indicating whether the commit was marked as a breaking change
 ```
 
 You may also use the following escape sequences:
@@ -390,7 +390,7 @@ Available services:
 
 ## License
 
-Conch is licensed under the MIT license. See `LICENSE.txt`.
+Conch is licensed under the MIT license. See [LICENSE.txt](LICENSE.txt).
 
 Conch is statically-linked against the following third-party libraries:
 
@@ -405,6 +405,10 @@ It references the following standards:
 
 * [Conventional Commits] ([CC-BY-3.0])
 * [Semantic Versioning][semver] ([CC-BY-3.0])
+
+See [go.mod](go.mod) or run `conch --version` for links to Go module dependencies
+where you can view their open source licenses.
+
 
 [Conventional Commits]: https://www.conventionalcommits.org/
 [semver]: https://semver.org/
