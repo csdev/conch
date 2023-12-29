@@ -1,5 +1,5 @@
 # Dev image, supporting dynamic linking with libgit2.so for faster rebuilds.
-FROM golang:1.19-alpine3.17
+FROM golang:1.20-alpine3.18
 
 # update this if different user and directory names are needed
 ARG SERVICE=go
@@ -8,6 +8,8 @@ ARG SERVICE=go
 ARG UID=1000
 ARG GID=1000
 
+# TODO: newer alpine versions have libgit2 1.7, which is not yet supported by git2go
+# https://github.com/libgit2/git2go#which-go-version-to-use
 ARG LIBGIT2_VERSION=1.5
 
 RUN apk add --no-cache gcc "libgit2-dev~=${LIBGIT2_VERSION}" musl-dev pkgconf tini

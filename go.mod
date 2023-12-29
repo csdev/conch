@@ -1,6 +1,6 @@
 module github.com/csdev/conch
 
-go 1.19
+go 1.20
 
 require (
 	github.com/libgit2/git2go/v34 v34.0.0
