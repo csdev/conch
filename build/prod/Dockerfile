@@ -1,7 +1,7 @@
 # Compile statically-linked library for http-parser (libhttp_parser.a),
 # which is currently not available via apk. Remove this once packaging
 # is fixed upstream.
-FROM alpine:3.17 AS patch
+FROM alpine:3.18 AS patch
 
 WORKDIR /opt/build
 RUN apk add --no-cache gcc git make musl-dev
@@ -11,7 +11,7 @@ WORKDIR /opt/build/http-parser
 RUN make package
 
 # Main application build.
-FROM golang:1.19-alpine3.17 AS builder
+FROM golang:1.20-alpine3.18 AS builder
 
 ARG SERVICE=go
 ARG LIBGIT2_VERSION=1.5
@@ -37,7 +37,7 @@ RUN mkdir "/opt/$SERVICE/bin" \
         -o "/opt/$SERVICE/bin" ./...
 
 # Production image with statically-linked binary and init environment.
-FROM alpine:3.17
+FROM alpine:3.18
 
 ARG SERVICE=go
 ARG UID=1000
