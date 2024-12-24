@@ -1,5 +1,5 @@
 # Dev image, supporting dynamic linking with libgit2.so for faster rebuilds.
-FROM golang:1.20-alpine3.18
+FROM golang:1.22-alpine3.18
 
 # update this if different user and directory names are needed
 ARG SERVICE=go

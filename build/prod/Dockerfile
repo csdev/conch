@@ -11,7 +11,7 @@ WORKDIR /opt/build/http-parser
 RUN make package
 
 # Main application build.
-FROM golang:1.20-alpine3.18 AS builder
+FROM golang:1.22-alpine3.18 AS builder
 
 ARG SERVICE=go
 ARG LIBGIT2_VERSION=1.5
